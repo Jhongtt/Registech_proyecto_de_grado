@@ -15,7 +15,6 @@ API REST para el sistema de inventario y gestión de equipos de TI de la empresa
 | MySQL2 | ^3.22.6 | Cliente para base de datos MySQL |
 | dotenv | ^17.4.2 | Variables de entorno |
 | cors | ^2.8.6 | Habilitar peticiones cross-origin |
-| body-parser | ^2.3.0 | Parsear peticiones JSON |
 | nodemon | ^3.1.14 | Auto-reinicio en desarrollo |
 
 ---
@@ -23,19 +22,33 @@ API REST para el sistema de inventario y gestión de equipos de TI de la empresa
 ## Estructura del Proyecto
 
 ```
-Proyecto_Final/
-├── .env                    # Variables de entorno (credenciales DB, puerto)
-├── package.json            # Configuración del proyecto y dependencias
-├── package-lock.json       # Lock de dependencias
-├── index.js                # Punto de entrada - servidor Express
-├── conexion.js             # Conexión a la base de datos MySQL
-├── db_inv_ti.sql           # Script SQL - estructura e inserción de datos
-├── usuariosRoutes.js       # Rutas CRUD de usuarios y login
-├── areasRoutes.js          # Rutas de consulta de áreas
-├── equiposRoutes.js        # Rutas de gestión de equipos y mantenimiento
-├── productosRoutes.js      # Rutas CRUD de productos
-└── ventasRoutes.js         # Rutas de registro y consulta de ventas
+Registech_proyecto_de_grado/
+├── backend/                # API REST (Node.js + Express)
+│   ├── .env.example        # Plantilla de variables de entorno
+│   ├── package.json        # Configuración del proyecto y dependencias
+│   ├── package-lock.json   # Lock de dependencias
+│   ├── index.js            # Punto de entrada - servidor Express
+│   ├── db_inv_ti.sql       # Script SQL - estructura e inserción de datos
+│   ├── config/
+│   │   └── db.js           # Conexión a la base de datos MySQL
+│   ├── controllers/        # Lógica de negocio de cada recurso
+│   │   ├── areasController.js
+│   │   ├── equiposController.js
+│   │   ├── productosController.js
+│   │   ├── usuariosController.js
+│   │   └── ventasController.js
+│   ├── routes/             # Definición de rutas HTTP por recurso
+│   │   ├── areas.js
+│   │   ├── equipos.js
+│   │   ├── productos.js
+│   │   ├── usuarios.js
+│   │   └── ventas.js
+│   └── utils/
+│       └── date.js         # Helpers reutilizables (formato de fechas)
+└── frontend/               # Aplicación React + Vite
 ```
+
+**Convención:** todas las rutas se exponen bajo el prefijo `/api` (ej: `GET /api/equipos`).
 
 ---
 
@@ -47,12 +60,12 @@ Proyecto_Final/
 - Define el nombre, versión y descripción del proyecto
 - Establece `index.js` como punto de entrada
 - Incluye script de desarrollo: `npm run dev` (ejecuta nodemon)
-- Dependencias: express, cors, body-parser, mysql2, dotenv, nodemon, pg
+- Dependencias: express, cors, mysql2, dotenv, nodemon
 
 ---
 
-### 2. `.env`
-**Propósito:** Variables de entorno para la configuración del servidor y la base de datos.
+### 2. `.env.example`
+**Propósito:** Plantilla de variables de entorno para la configuración del servidor y la base de datos. Cópiala a `.env` y ajusta los valores.
 
 ```
 PORT=3000
@@ -87,7 +100,7 @@ DB_NAME=proyecto_final
 
 ---
 
-### 4. `conexion.js`
+### 4. `config/db.js`
 **Propósito:** Configurar y exportar la conexión a MySQL.
 
 - Lee las variables de entorno desde `.env`
@@ -102,13 +115,13 @@ DB_NAME=proyecto_final
 
 - Crea instancia de Express
 - Habilita CORS para peticiones de otros dominios
-- Configura body-parser para parsear JSON
-- Registra todas las rutas en la raíz (`/`)
+- Configura `express.json()` para parsear JSON
+- Registra todas las rutas bajo el prefijo `/api`
 - Inicia el servidor en el puerto 3000
 
 ---
 
-### 6. `usuariosRoutes.js`
+### 6. `routes/usuarios.js` + `controllers/usuariosController.js`
 **Propósito:** CRUD completo de usuarios y autenticación.
 
 | Método | Ruta | Descripción |
@@ -131,7 +144,7 @@ DB_NAME=proyecto_final
 
 ---
 
-### 7. `areasRoutes.js`
+### 7. `routes/areas.js` + `controllers/areasController.js`
 **Propósito:** Consulta de áreas de la empresa.
 
 | Método | Ruta | Descripción |
@@ -140,7 +153,7 @@ DB_NAME=proyecto_final
 
 ---
 
-### 8. `equiposRoutes.js`
+### 8. `routes/equipos.js` + `controllers/equiposController.js`
 **Propósito:** Gestión completa de equipos y sistema de mantenimiento.
 
 | Método | Ruta | Descripción |
@@ -174,7 +187,7 @@ DB_NAME=proyecto_final
 
 ---
 
-### 9. `productosRoutes.js`
+### 9. `routes/productos.js` + `controllers/productosController.js`
 **Propósito:** CRUD completo de productos del inventario.
 
 | Método | Ruta | Descripción |
@@ -191,7 +204,7 @@ DB_NAME=proyecto_final
 
 ---
 
-### 10. `ventasRoutes.js`
+### 10. `routes/ventas.js` + `controllers/ventasController.js`
 **Propósito:** Registro y consulta de ventas.
 
 | Método | Ruta | Descripción |
@@ -219,15 +232,13 @@ DB_NAME=proyecto_final
 El proyecto fue creado en el siguiente orden lógico:
 
 1. **`package.json`** - Inicialización del proyecto npm e instalación de dependencias
-2. **`.env`** - Configuración de variables de entorno
+2. **`.env.example`** - Configuración de variables de entorno
 3. **`db_inv_ti.sql`** - Diseño e implementación de la base de datos
-4. **`conexion.js`** - Capa de conexión a MySQL
+4. **`config/db.js`** - Capa de conexión a MySQL
 5. **`index.js`** - Punto de entrada del servidor
-6. **`usuariosRoutes.js`** - Gestión de usuarios y login
-7. **`areasRoutes.js`** - Consulta de áreas
-8. **`equiposRoutes.js`** - Gestión de equipos y mantenimiento
-9. **`productosRoutes.js`** - CRUD de productos
-10. **`ventasRoutes.js`** - Registro de ventas
+6. **`controllers/`** - Lógica de negocio de usuarios, áreas, equipos, productos y ventas
+7. **`routes/`** - Definición de endpoints por recurso
+8. **`utils/date.js`** - Helpers reutilizables
 
 ---
 
@@ -241,17 +252,31 @@ El proyecto fue creado en el siguiente orden lógico:
 ### Pasos
 
 ```bash
-# 1. Instalar dependencias
+# 1. Entrar a la carpeta del backend
+cd backend
+
+# 2. Instalar dependencias
 npm install
 
-# 2. Ejecutar el script SQL en MySQL para crear las tablas
+# 3. Ejecutar el script SQL en MySQL para crear las tablas
 # (usar MySQL Workbench o consola)
 
-# 3. Iniciar el servidor en modo desarrollo
+# 4. Iniciar el servidor en modo desarrollo
 npm run dev
 ```
 
 El servidor estará disponible en `http://localhost:3000`
+
+El frontend se ejecuta por separado desde la carpeta `frontend/`:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+> **Nota:** todos los endpoints de la API usan el prefijo `/api`.
+> Ejemplo: `POST http://localhost:3000/api/login`
 
 ---
 

@@ -4,7 +4,7 @@ import Swal from "sweetalert2"
 
 import Tecnologia from './Tecnologia'
 import RecursosHumanos from "./RecursosHumano"
-import Almacen from ".Almacen/"
+import Soportes from "./Soportes"
 const Dashboard = () => {
     const location = useLocation()
     const navigate = useNavigate()
@@ -44,9 +44,15 @@ const Dashboard = () => {
 
     const renderAreaComponent = () => {
         switch(usuario.area) {
-        case 'tecnologia': return <Tecnologia usuario= { usuario.usuario } /> // Pasamos el usuario como prop
-        case 'recursos Humanos': return <RecursosHumanos />
-        case 'almacen': return <Almacen/>
+        case 'Tecnologia': return <Tecnologia usuario= { usuario.usuario } /> // Pasamos el usuario como prop
+        case 'Recursos Humanos': return <RecursosHumanos />
+        case 'Soporte': return <Soportes usuario= { usuario.usuario } />
+        default: return (
+            <div className="text-center mt-5">
+                <h4>Modulo en desarrollo</h4>
+                <p>El modulo de tu area ({usuario.area}) se esta construyendo.</p>
+            </div>
+        )
         }
     }
 

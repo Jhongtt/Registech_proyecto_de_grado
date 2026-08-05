@@ -26,7 +26,7 @@ if(fechaInicio > fechaFin) {
 
 //FORMATEAMOS LAS FECHAS YYYY-MM-DD PARA LA CONSULTA SQL
 const fechaInicioStr = fechaInicio.toISOString().split('T')[0]
-const fechaFinStr = fechaFin.toISOString().split('T')[0]  
+const fechaFinStr = fechaFin.toISOString().split('T')[0]
 const query = `SELECT * FROM ventas WHERE fecha_venta BETWEEN ? AND ?`
 
 db.query(query, [fechaInicioStr, fechaFinStr], (error, results) => {
