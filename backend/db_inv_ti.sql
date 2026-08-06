@@ -131,4 +131,10 @@ INSERT INTO equipos (num_serie, equipo, area, descripcion, estado, responsable, 
 ('EQ-S26-035', 'Lector de Código de Barras Honeywell', 'Logística', 'Escáner de mano inalámbrico de alta resistencia para bodega', 'Asignado', '1089123456', '2024-01-30', '2024-02-01', NULL);
 
 INSERT INTO usuarios (usuario, contrasena, nombre, area, correo, estado) VALUES
-('admin', 'admin123', 'Administrador del Sistema', 'Tecnologia', 'admin@registech.com', 'activo');
+('admin', 'admin123', 'Administrador del Sistema', 'Tecnologia', 'admin@registech.com', 'activo'),
+('rh', 'rh123', 'Gestion Recursos Humanos', 'Recursos Humanos', 'rh@registech.com', 'activo'),
+('soporte', 'soporte123', 'Soporte Tecnico', 'Soporte', 'soporte@registech.com', 'activo'),
+('almacen', 'almacen123', 'Encargado de Almacen', 'Almacen', 'almacen@registech.com', 'activo'),
+('ventas', 'ventas123', 'Asesor de Ventas', 'Ventas', 'ventas@registech.com', 'activo'),
+('fianzas', 'fianzas123', 'Area de Fianzas', 'Fianzas', 'fianzas@registech.com', 'activo'),
+('administracion', 'administracion123', 'Area Administrativa', 'Administración', 'administracion@registech.com', 'activo');
