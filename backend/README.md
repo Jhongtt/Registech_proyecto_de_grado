@@ -328,6 +328,22 @@ npm run dev
 
 ---
 
+## Mockups y Prototipos
+
+Los mockups del sistema se encuentran en el siguiente enlace:
+
+**[Ver Mockups del Sistema Registech](https://stitch.withgoogle.com/projects/15267342535273535427)**
+
+El prototipo incluye las pantallas principales de la aplicación:
+
+- **Login** - Acceso al sistema con usuario y contraseña
+- **Dashboard** - Vista principal con la información del área
+- **Gestión de Tecnología** - Equipos, soportes y historiales de mantenimiento
+- **Recursos Humanos** - Listado y gestión de usuarios/asociados
+- **Módulos en desarrollo** - Almacén, ventas y finanzas
+
+---
+
 ## Autor
 
 **Aly.dev.1208** (Aly Santiago Cano)
