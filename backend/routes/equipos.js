@@ -18,7 +18,7 @@ const {
 } = require('../controllers/equiposController')
 
 const { authMiddleware, requireRol } = require('../middlewares/auth')
-const { upload } = require('../middlewares/upload')
+const { upload, uploadMemoria } = require('../middlewares/upload')
 const { validate } = require('../middlewares/validate')
 
 const {
@@ -45,7 +45,7 @@ router.post(
     '/equipos/add',
     authMiddleware,
     requireRol('admin'),
-    upload.single('foto'),
+    uploadMemoria.single('foto'),
     validate(crearEquipoSchema),
     agregarEquipo
 )

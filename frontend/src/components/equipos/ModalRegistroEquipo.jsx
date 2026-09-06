@@ -10,6 +10,7 @@ export default function ModalRegistroEquipo({ areas, onClose, onRegistrado }) {
         equipo: '', descripcion: '', sistema_operativo: '', num_serie: '',
         area: '', fecha_adquisicion: toISODate(new Date()), estado: 'Disponible'
     })
+    const [foto, setFoto] = useState(null)
 
     const handleChange = (campo, valor) => {
         setNuevoEquipo(prev => ({ ...prev, [campo]: valor }))
@@ -23,6 +24,9 @@ export default function ModalRegistroEquipo({ areas, onClose, onRegistrado }) {
         setGuardando(true)
         const formData = new FormData()
         Object.entries(nuevoEquipo).forEach(([campo, valor]) => formData.append(campo, valor || ''))
+        if (foto) {
+            formData.append('foto', foto)
+        }
 
         axios.post(API_ROUTES.CREAR_EQUIPO, formData)
             .then(res => {
@@ -109,6 +113,14 @@ export default function ModalRegistroEquipo({ areas, onClose, onRegistrado }) {
                                         disabled={guardando}
                                     />
                                 </div>
+                            </div>
+
+                            <div className="mb-2">
+                                <label className="form-label fw-semibold mb-1">Foto del Equipo</label>
+                                <input type="file" className="form-control" accept="image/*"
+                                    onChange={(e) => setFoto(e.target.files[0])}
+                                    disabled={guardando}
+                                />
                             </div>
 
                             <div className="mb-0">

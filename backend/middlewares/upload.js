@@ -30,10 +30,23 @@ const upload = multer({
     }
 })
 
+const storageMemoria = multer.memoryStorage()
+
+const uploadMemoria = multer({
+    storage: storageMemoria,
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        if (!ALLOWED_MIMES.includes(file.mimetype)) {
+            return cb(new Error('SOLO_IMAGENES'))
+        }
+        cb(null, true)
+    }
+})
+
 function eliminarArchivo(rutaRelativa) {
     if (!rutaRelativa) return
     const rutaAbsoluta = path.join(UPLOADS_DIR, path.basename(rutaRelativa))
     fs.unlink(rutaAbsoluta, () => {})
 }
 
-module.exports = { upload, UPLOADS_DIR, eliminarArchivo }
+module.exports = { upload, uploadMemoria, UPLOADS_DIR, eliminarArchivo }
