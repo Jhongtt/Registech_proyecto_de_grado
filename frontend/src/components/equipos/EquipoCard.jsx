@@ -16,7 +16,7 @@ export default function EquipoCard({ equipo, onPrestamo, onDevolver, vencimiento
             : `Vence en ${vencimiento?.dias}d`
 
     const imagen = equipo.imagen
-        ? API_ROUTES.ARCHIVO_EVIDENCIA(equipo.imagen)
+        ? (equipo.imagen.startsWith('http') ? equipo.imagen : API_ROUTES.ARCHIVO_EVIDENCIA(equipo.imagen))
         : null
 
     const especificaciones = getEspecificaciones(equipo)

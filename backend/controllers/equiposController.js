@@ -4,6 +4,7 @@ const notificacionesService = require('../services/notificacionesService')
 const prisma = require('../lib/prisma')
 const auditoriaService = require('../services/auditoriaService')
 const crypto = require('crypto')
+const { subirImagenSupabase } = require('../config/supabase')
 
 // ======================================================
 // OBTENER ESTADOS DE EQUIPOS
@@ -60,117 +61,50 @@ try {
 // ======================================================
 
 exports.agregarEquipo = async (req, res) => {
+    const archivo = req.file
 
+    try {
+        let imageUrl = null
 
-const archivo = req.file
+        if (archivo) {
+            // Generate a filename with extension
+            const extension = archivo.originalname.split('.').pop()
+            const filename = `equipo-${req.body.num_serie}-${Date.now()}.${extension}`
+            // Upload buffer to Supabase
+            imageUrl = await subirImagenSupabase(archivo.buffer, filename, archivo.mimetype)
+        }
 
-try {
-
-    const equipo = await equiposService.crearEquipo({
-
-        ...req.body,
-
-        imagen: archivo?.filename || null
-
-    })
-
-
-    await auditoriaService.registrar(
-
-        req.usuario.usuario,
-
-        `Registró el equipo ${equipo.equipo} (${equipo.num_serie}) en el inventario`
-
-    )
-
-
-    res.status(201).json({
-
-        mensaje: 'Equipo registrado exitosamente',
-
-        equipo
-
-    })
-
-} catch (error) {
-
-    if (archivo) {
-
-        eliminarArchivo(archivo.filename)
-
-    }
-
-
-    console.error(
-
-        'Error al registrar equipo:',
-
-        error.message,
-
-        error.code
-
-    )
-
-
-    if (error.message === 'EQUIPO_DUPLICADO') {
-
-        return res.status(409).json({
-
-            error: 'Ya existe un equipo con ese número de serie'
-
+        const equipo = await equiposService.crearEquipo({
+            ...req.body,
+            imagen: imageUrl
         })
 
-    }
+        await auditoriaService.registrar(
+            req.usuario.usuario,
+            `Registró el equipo ${equipo.equipo} (${equipo.num_serie}) en el inventario`
+        )
 
-
-    if (error.message === 'ESTADO_INVALIDO') {
-
-        return res.status(400).json({
-
-            error: 'El estado inicial del equipo es inválido'
-
+        res.status(201).json({
+            mensaje: 'Equipo registrado exitosamente',
+            equipo
         })
+    } catch (error) {
+        console.error('Error al registrar equipo:', error.message, error.code)
 
+        if (error.message === 'EQUIPO_DUPLICADO') {
+            return res.status(409).json({ error: 'Ya existe un equipo con ese número de serie' })
+        }
+        if (error.message === 'ESTADO_INVALIDO') {
+            return res.status(400).json({ error: 'El estado inicial del equipo es inválido' })
+        }
+        if (error.message === 'SOLO_IMAGENES') {
+            return res.status(400).json({ error: 'Solo se permiten imágenes (jpg, png, webp)' })
+        }
+        if (error.message && error.message.includes('requerido')) {
+            return res.status(400).json({ error: error.message })
+        }
+        res.status(500).json({ error: 'Error al registrar el equipo' })
     }
-
-
-    if (error.message === 'SOLO_IMAGENES') {
-
-        return res.status(400).json({
-
-            error: 'Solo se permiten imágenes (jpg, png, webp)'
-
-        })
-
-    }
-
-
-    if (
-
-        error.message &&
-
-        error.message.includes('requerido')
-
-    ) {
-
-        return res.status(400).json({
-
-            error: error.message
-
-        })
-
-    }
-
-
-    res.status(500).json({
-
-        error: 'Error al registrar el equipo'
-
-    })
-
-}
-
-
 }
 
 // ======================================================
