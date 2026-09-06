@@ -46,7 +46,33 @@ const subirImagenSupabase = async (buffer, filename, mimetype) => {
     }
 }
 
+/**
+ * Elimina una imagen del bucket "equipos" de Supabase
+ * @param {String} publicUrl - La URL pública de la imagen a eliminar
+ * @returns {Promise<void>}
+ */
+const eliminarImagenSupabase = async (publicUrl) => {
+    try {
+        if (!publicUrl || !publicUrl.includes('supabase.co')) return
+
+        // Extraer el nombre del archivo de la URL
+        const parts = publicUrl.split('/')
+        const filename = parts[parts.length - 1]
+
+        const { error } = await supabase
+            .storage
+            .from('equipos')
+            .remove([filename])
+
+        if (error) throw error
+
+    } catch (error) {
+        console.error('Error al eliminar imagen de Supabase:', error)
+    }
+}
+
 module.exports = {
     supabase,
-    subirImagenSupabase
+    subirImagenSupabase,
+    eliminarImagenSupabase
 }

@@ -4,7 +4,7 @@ const notificacionesService = require('../services/notificacionesService')
 const prisma = require('../lib/prisma')
 const auditoriaService = require('../services/auditoriaService')
 const crypto = require('crypto')
-const { subirImagenSupabase } = require('../config/supabase')
+const { subirImagenSupabase, eliminarImagenSupabase } = require('../config/supabase')
 
 // ======================================================
 // OBTENER ESTADOS DE EQUIPOS
@@ -1238,5 +1238,51 @@ exports.getHistorialEquipo = async (req, res) => {
             error: 'Error al obtener el historial del equipo'
         })
 
+    }
+}
+// ======================================================
+// ACTUALIZAR O ELIMINAR FOTO DE UN EQUIPO
+// ======================================================
+
+exports.actualizarFoto = async (req, res) => {
+    try {
+        const { num_serie } = req.params;
+        const eliminar = req.body.eliminar === 'true';
+        const file = req.file;
+
+        // 1. Obtener el equipo actual para ver si ya tiene foto
+        const equipoActual = await prisma.equipos.findUnique({
+            where: { num_serie }
+        });
+
+        if (!equipoActual) {
+            return res.status(404).json({ error: 'Equipo no encontrado' });
+        }
+
+        let nuevaUrl = equipoActual.imagen;
+
+        // 2. Si hay foto nueva o se pidió eliminar, borrar la anterior de Supabase
+        if ((file || eliminar) && equipoActual.imagen && equipoActual.imagen.includes('supabase.co')) {
+            await eliminarImagenSupabase(equipoActual.imagen);
+            nuevaUrl = null;
+        }
+
+        // 3. Subir la nueva foto si existe
+        if (file) {
+            const extension = file.originalname.split('.').pop();
+            const filename = `equipo-${num_serie}-${Date.now()}.${extension}`;
+            nuevaUrl = await subirImagenSupabase(file.buffer, filename, file.mimetype);
+        } else if (eliminar) {
+            nuevaUrl = null;
+        }
+
+        // 4. Actualizar base de datos
+        await equiposService.actualizarFotoEquipo(num_serie, nuevaUrl);
+
+        res.json({ message: 'Foto actualizada exitosamente', imagen: nuevaUrl });
+
+    } catch (error) {
+        console.error('Error al actualizar foto del equipo:', error);
+        res.status(500).json({ error: 'Error al actualizar foto del equipo' });
     }
 }

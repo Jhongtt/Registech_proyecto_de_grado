@@ -68,6 +68,7 @@
         RESTABLECER_PASSWORD: `${BASE_URL}/usuarios/restablecer-password`,
         EQUIPOS: `${BASE_URL}/equipos`,
         CREAR_EQUIPO: `${BASE_URL}/equipos/add`,
+        ACTUALIZAR_FOTO: (numSerie) => `${BASE_URL}/equipos/${encodeURIComponent(numSerie)}/foto`,
         ARCHIVO_EVIDENCIA: (nombre) => `${BASE_URL.replace('/api', '')}/uploads/${nombre}`,
         ESTADOS_EQUIPO: `${BASE_URL}/estados_equipo`,
         ASIGNAR_USUARIO: `${BASE_URL}/equipos/asignacion`,

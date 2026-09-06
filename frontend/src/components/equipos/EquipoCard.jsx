@@ -1,13 +1,20 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import axios from 'axios'
 import { getEstadoClass, getEstadoLabel, getEspecificaciones } from '../../utils/equipoUtils'
 import { API_ROUTES } from '../../api/apiRoutes'
+import { useAuth } from '../../context/AuthContext'
 
 export default function EquipoCard({ equipo, onPrestamo, onDevolver, vencimiento }) {
+    const { usuario } = useAuth()
     const [verDetalle, setVerDetalle] = useState(false)
     const [historial, setHistorial] = useState([])
     const [cargandoHistorial, setCargandoHistorial] = useState(false)
     const [errorHistorial, setErrorHistorial] = useState('')
+    
+    // Estado local para la imagen
+    const [currentImagen, setCurrentImagen] = useState(equipo.imagen)
+    const [subiendoFoto, setSubiendoFoto] = useState(false)
+    const fileInputRef = useRef(null)
 
     const textoAlerta = vencimiento?.tipo === 'vencido'
         ? `VENCIDO (${vencimiento.dias}d)`
@@ -15,8 +22,8 @@ export default function EquipoCard({ equipo, onPrestamo, onDevolver, vencimiento
             ? 'Vence HOY'
             : `Vence en ${vencimiento?.dias}d`
 
-    const imagen = equipo.imagen
-        ? (equipo.imagen.startsWith('http') ? equipo.imagen : API_ROUTES.ARCHIVO_EVIDENCIA(equipo.imagen))
+    const imagen = currentImagen
+        ? (currentImagen.startsWith('http') ? currentImagen : API_ROUTES.ARCHIVO_EVIDENCIA(currentImagen))
         : null
 
     const especificaciones = getEspecificaciones(equipo)
@@ -50,6 +57,48 @@ export default function EquipoCard({ equipo, onPrestamo, onDevolver, vencimiento
 
         cargarHistorial()
     }, [verDetalle, equipo.num_serie])
+
+    // ======================================================
+    // MANEJO DE FOTOS
+    // ======================================================
+    const puedeEditarFoto = usuario && (usuario.rol === 'admin' || usuario.rol === 'inventario')
+
+    const handleFileChange = async (e) => {
+        const file = e.target.files[0]
+        if (!file) return
+
+        setSubiendoFoto(true)
+        const formData = new FormData()
+        formData.append('foto', file)
+
+        try {
+            const res = await axios.patch(API_ROUTES.ACTUALIZAR_FOTO(equipo.num_serie), formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            })
+            setCurrentImagen(res.data.imagen)
+        } catch (error) {
+            console.error('Error al actualizar foto:', error)
+            alert('Error al actualizar la foto')
+        } finally {
+            setSubiendoFoto(false)
+            if (fileInputRef.current) fileInputRef.current.value = ''
+        }
+    }
+
+    const handleEliminarFoto = async () => {
+        if (!confirm('¿Seguro que deseas eliminar la foto actual?')) return
+
+        setSubiendoFoto(true)
+        try {
+            await axios.patch(API_ROUTES.ACTUALIZAR_FOTO(equipo.num_serie), { eliminar: 'true' })
+            setCurrentImagen(null)
+        } catch (error) {
+            console.error('Error al eliminar foto:', error)
+            alert('Error al eliminar la foto')
+        } finally {
+            setSubiendoFoto(false)
+        }
+    }
 
     // ======================================================
     // ACCIONES DEL MODAL
@@ -260,7 +309,7 @@ export default function EquipoCard({ equipo, onPrestamo, onDevolver, vencimiento
                                         background: 'var(--bg-surface-2)'
                                     }}
                                 >
-                                    <div className="prestamo-modal__imagen mb-0 flex-shrink-0">
+                                    <div className="prestamo-modal__imagen mb-0 flex-shrink-0 position-relative group-hover">
                                         {imagen ? (
                                             <img
                                                 src={imagen}
@@ -272,6 +321,26 @@ export default function EquipoCard({ equipo, onPrestamo, onDevolver, vencimiento
                                             />
                                         ) : (
                                             <i className="bi bi-pc-display"></i>
+                                        )}
+                                        
+                                        {puedeEditarFoto && (
+                                            <div className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-row align-items-center justify-content-center gap-2 bg-dark bg-opacity-50" style={{ opacity: subiendoFoto ? 1 : 0, transition: 'opacity 0.2s' }} onMouseEnter={(e) => !subiendoFoto && (e.currentTarget.style.opacity = '1')} onMouseLeave={(e) => !subiendoFoto && (e.currentTarget.style.opacity = '0')}>
+                                                {subiendoFoto ? (
+                                                    <div className="spinner-border text-light spinner-border-sm" role="status"></div>
+                                                ) : (
+                                                    <>
+                                                        <label className="btn btn-light rounded-circle d-flex align-items-center justify-content-center p-0 shadow-sm" title="Cambiar foto" style={{ cursor: 'pointer', width: '32px', height: '32px' }}>
+                                                            <i className="bi bi-camera" style={{ fontSize: '14px' }}></i>
+                                                            <input type="file" className="d-none" accept="image/jpeg,image/png,image/webp" onChange={handleFileChange} ref={fileInputRef} />
+                                                        </label>
+                                                        {imagen && (
+                                                            <button className="btn btn-danger rounded-circle d-flex align-items-center justify-content-center p-0 shadow-sm" title="Eliminar foto" onClick={handleEliminarFoto} style={{ width: '32px', height: '32px' }}>
+                                                                <i className="bi bi-trash" style={{ fontSize: '14px' }}></i>
+                                                            </button>
+                                                        )}
+                                                    </>
+                                                )}
+                                            </div>
                                         )}
                                     </div>
 
