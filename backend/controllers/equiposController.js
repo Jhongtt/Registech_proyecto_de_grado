@@ -3,6 +3,7 @@ const { eliminarArchivo } = require('../middlewares/upload')
 const notificacionesService = require('../services/notificacionesService')
 const prisma = require('../lib/prisma')
 const auditoriaService = require('../services/auditoriaService')
+const crypto = require('crypto')
 
 // ======================================================
 // OBTENER ESTADOS DE EQUIPOS
@@ -400,8 +401,7 @@ console.log('================================')
     // ==================================================
 
     const esAdmin =
-
-        String(rolUsuario || '').toLowerCase() === 'admin'
+    String(rolUsuario || '').toLowerCase() === 'admin'
 
 
     // ==================================================
@@ -409,78 +409,35 @@ console.log('================================')
     // ==================================================
 
     const estadoOrden = esAdmin
+    ? 'aprobada'
+    : 'pendiente'
 
-        ? 'aprobada'
-
-        : 'pendiente'
-
-
-    const aprobadoPor = esAdmin
-
-        ? usuarioReporta
-
-        : null
+const aprobadoPor = esAdmin
+    ? usuarioReporta
+    : null
 
 
     // ==================================================
     // GENERAR ID DEL HISTORIAL
     // ==================================================
 
-    const ultimo =
-
-        await prisma.historial_mantenimientos.findFirst({
-
-            orderBy: {
-
-                id_historial: 'desc'
-
-            },
-
-            select: {
-
-                id_historial: true
-
-            }
-
-        })
-
-
-    const id_historial = ultimo
-
-        ? String(Number(ultimo.id_historial) + 1)
-
-        : '1'
-
+    const id_historial = crypto.randomUUID()
 
     // ==================================================
     // CREAR REPORTE
     // ==================================================
 
-    const resultado =
-
-        await equiposService.createReporteTransaction(
-
-            num_serie,
-
-            id_historial,
-
-            new Date(),
-
-            falla.trim(),
-
-            req.file ? req.file.filename : null,
-
-            estadoOrden,
-
-            aprobadoPor,
-
-            usuarioReporta,
-
-            // IMPORTANTE:
-            // ENVIAR EL ROL DEL USUARIO
-            rolUsuario
-
-        )
+const resultado =
+    await equiposService.createReporteTransaction(
+        num_serie,
+        id_historial,
+        new Date(),
+        falla.trim(),
+        req.file ? req.file.filename : null,
+        estadoOrden,
+        aprobadoPor,
+        usuarioReporta
+    )
 
 
     // ==================================================

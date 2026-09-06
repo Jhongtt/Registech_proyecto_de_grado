@@ -25,17 +25,19 @@ exports.getEquiposPorArea = async () => {
          GROUP BY area
          ORDER BY total DESC`
     )
+
     return rows
 }
 
 exports.getPrestamosPorArea = async () => {
     const { rows } = await db.query(
-        `SELECT e.area, COUNT(*)::int as total
+        `SELECT p.area, COUNT(DISTINCT p.id_prestamo)::int as total
          FROM prestamos p
-         JOIN equipos e ON p.num_serie = e.num_serie
-         GROUP BY e.area
+         WHERE p.area IS NOT NULL
+         GROUP BY p.area
          ORDER BY total DESC`
     )
+
     return rows
 }
 
@@ -46,19 +48,38 @@ exports.getEquiposPorEstado = async () => {
          GROUP BY estado
          ORDER BY total DESC`
     )
+
     return rows
 }
 
 exports.getPrestamosRecientes = async (limit = 10) => {
     const { rows } = await db.query(
-        `SELECT p.id_prestamo, p.num_serie, p.usuario_destino, p.fecha_prestamo,
-                p.fecha_devolucion, p.estado, p.observaciones,
-                e.equipo, e.descripcion, e.area as equipo_area
+        `SELECT 
+            p.id_prestamo,
+            STRING_AGG(pe.num_serie, ', ') AS num_serie,
+            p.fecha_prestamo,
+            p.fecha_devolucion,
+            p.estado,
+            p.observaciones,
+            p.area AS equipo_area,
+            STRING_AGG(e.equipo, ', ') AS equipo,
+            STRING_AGG(e.descripcion, ', ') AS descripcion
          FROM prestamos p
-         JOIN equipos e ON p.num_serie = e.num_serie
+         JOIN prestamo_equipos pe 
+            ON p.id_prestamo = pe.id_prestamo
+         JOIN equipos e 
+            ON pe.num_serie = e.num_serie
+         GROUP BY 
+            p.id_prestamo,
+            p.fecha_prestamo,
+            p.fecha_devolucion,
+            p.estado,
+            p.observaciones,
+            p.area
          ORDER BY p.fecha_prestamo DESC
          LIMIT $1`,
         [limit]
     )
+
     return rows
 }

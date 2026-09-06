@@ -1,57 +1,125 @@
 const prestamosRepository = require('../repository/prestamosRepository')
 const { sanitizarTexto, sanitizarHtml } = require('../utils/sanitize')
 
-// Valida formato YYYY-MM-DD; devuelve null si viene vacio o invalido
+// Valida formato YYYY-MM-DD; devuelve null si viene vacío o inválido
 function validarFecha(valor) {
     if (!valor) return null
-    return /^\d{4}-\d{2}-\d{2}$/.test(String(valor)) ? String(valor) : null
+
+    return /^\d{4}-\d{2}-\d{2}$/.test(String(valor))
+        ? String(valor)
+        : null
 }
+
+
+// ======================================================
+// OBTENER PRÉSTAMOS
+// ======================================================
 
 exports.getPrestamos = async () => {
     return await prestamosRepository.findPrestamos()
 }
 
+
+// ======================================================
+// OBTENER PRÉSTAMOS ACTIVOS
+// ======================================================
+
 exports.getPrestamosActivos = async () => {
     return await prestamosRepository.findPrestamosActivos()
 }
 
+
+// ======================================================
+// BUSCAR PRÉSTAMO ACTIVO POR EQUIPO
+// ======================================================
+
 exports.getPrestamoActivoPorEquipo = async (num_serie) => {
+
     const numSerieLimpio = sanitizarTexto(num_serie, 50)
-    return await prestamosRepository.findPrestamoActivoPorEquipo(numSerieLimpio)
+
+    if (!numSerieLimpio) {
+        throw new Error('REQUERIDOS')
+    }
+
+    return await prestamosRepository.findPrestamoActivoPorEquipo(
+        numSerieLimpio
+    )
 }
 
 
+// ======================================================
+// CREAR PRÉSTAMO CON VARIOS EQUIPOS
+// ======================================================
+
 exports.crearPrestamo = async (
     num_series,
-    usuario_destino,
+    id_empleado,
+    id_usuario,
     observaciones,
     fecha_inicio,
-    fecha_limite,
-    area
+    fecha_limite
 ) => {
-    const usuarioLimpio = sanitizarTexto(usuario_destino, 50)
+
+    // ==================================================
+    // 1. SANITIZAR DESTINATARIO
+    // ==================================================
+
+    const idEmpleadoLimpio = id_empleado
+        ? sanitizarTexto(id_empleado, 50)
+        : null
+
+    const idUsuarioLimpio = id_usuario
+        ? Number(id_usuario)
+        : null
+
+    // ==================================================
+    // 2. SANITIZAR NÚMEROS DE SERIE
+    // ==================================================
 
     const numSeriesLimpios = Array.isArray(num_series)
-        ? num_series.map(numSerie => sanitizarTexto(numSerie, 50))
+        ? num_series
+            .map(numSerie => sanitizarTexto(numSerie, 50))
+            .filter(Boolean)
         : []
+
+    // ==================================================
+    // 3. SANITIZAR OBSERVACIONES
+    // ==================================================
 
     const observacionesLimpias = observaciones
         ? sanitizarHtml(observaciones, 500)
         : null
 
-    const areaLimpia = area
-        ? sanitizarTexto(area, 100)
-        : null
+    // ==================================================
+    // 4. VALIDAR FECHAS
+    // ==================================================
 
     const fechaInicioLimpia = validarFecha(fecha_inicio)
+
     const fechaLimiteLimpia = validarFecha(fecha_limite)
+
+    // ==================================================
+    // 5. VALIDAR CAMPOS REQUERIDOS
+    // ==================================================
 
     if (
         numSeriesLimpios.length === 0 ||
-        !usuarioLimpio
+        (!idEmpleadoLimpio && !idUsuarioLimpio)
     ) {
         throw new Error('REQUERIDOS')
     }
+
+    // ==================================================
+    // 6. VALIDAR QUE NO SE ENVÍEN AMBOS
+    // ==================================================
+
+    if (idEmpleadoLimpio && idUsuarioLimpio) {
+        throw new Error('DESTINATARIO_INVALIDO')
+    }
+
+    // ==================================================
+    // 7. VALIDAR FECHAS
+    // ==================================================
 
     if (
         fechaInicioLimpia &&
@@ -61,26 +129,42 @@ exports.crearPrestamo = async (
         throw new Error('FECHAS_INVALIDAS')
     }
 
-    await prestamosRepository.crearPrestamoTransaction(
+    // ==================================================
+    // 8. CREAR PRÉSTAMO
+    // ==================================================
+
+    return await prestamosRepository.crearPrestamoTransaction(
         numSeriesLimpios,
-        usuarioLimpio,
+        idEmpleadoLimpio,
+        idUsuarioLimpio,
         observacionesLimpias,
         fechaInicioLimpia,
-        fechaLimiteLimpia,
-        areaLimpia
+        fechaLimiteLimpia
     )
 }
 
 
+// ======================================================
+// DEVOLVER PRÉSTAMO COMPLETO
+// ======================================================
 
-exports.devolverPrestamo = async (id, observaciones, evidencia) => {
+exports.devolverPrestamo = async (
+    id,
+    observaciones,
+    evidencia
+) => {
+
     const idLimpio = sanitizarTexto(id, 50)
 
     const obsLimpia = observaciones
         ? sanitizarTexto(observaciones, 500)
         : null
 
-    await prestamosRepository.devolverPrestamoTransaction(
+    if (!idLimpio) {
+        throw new Error('REQUERIDOS')
+    }
+
+    return await prestamosRepository.devolverPrestamoTransaction(
         idLimpio,
         obsLimpia,
         evidencia
@@ -88,19 +172,31 @@ exports.devolverPrestamo = async (id, observaciones, evidencia) => {
 }
 
 
+// ======================================================
+// DEVOLVER UN EQUIPO
+// ======================================================
+
 exports.devolverEquipo = async (
     id,
     num_serie,
     observaciones,
     evidencia
 ) => {
+
     const idLimpio = sanitizarTexto(id, 50)
 
-    const numSerieLimpio = sanitizarTexto(num_serie, 50)
+    const numSerieLimpio = sanitizarTexto(
+        num_serie,
+        50
+    )
 
     const obsLimpia = observaciones
         ? sanitizarTexto(observaciones, 500)
         : null
+
+    if (!idLimpio || !numSerieLimpio) {
+        throw new Error('REQUERIDOS')
+    }
 
     return await prestamosRepository.devolverEquipoTransaction(
         idLimpio,
@@ -110,23 +206,32 @@ exports.devolverEquipo = async (
     )
 }
 
+
+// ======================================================
+// HISTORIAL DE EQUIPO
+// ======================================================
+
 exports.historialEquipo = async (num_serie) => {
-    const numSerieLimpio = sanitizarTexto(num_serie, 50)
-    return await prestamosRepository.findHistorialEquipo(numSerieLimpio)
-}
 
-exports.getEstadisticas = async () => {
-    return await prestamosRepository.getEstadisticasData()
-}
+    const numSerieLimpio = sanitizarTexto(
+        num_serie,
+        50
+    )
 
-exports.devolverEquipoParcial = async (id_prestamo, num_serie, observaciones) => {
-    const idLimpio = sanitizarTexto(id_prestamo, 50)
-    const serieLimpia = sanitizarTexto(num_serie, 50)
-    const obsLimpia = observaciones ? sanitizarTexto(observaciones, 500) : null
-
-    if (!idLimpio || !serieLimpia) {
+    if (!numSerieLimpio) {
         throw new Error('REQUERIDOS')
     }
 
-    await prestamosRepository.devolverEquipoParcialTransaction(idLimpio, serieLimpia, obsLimpia)
+    return await prestamosRepository.findHistorialEquipo(
+        numSerieLimpio
+    )
+}
+
+
+// ======================================================
+// ESTADÍSTICAS
+// ======================================================
+
+exports.getEstadisticas = async () => {
+    return await prestamosRepository.getEstadisticasData()
 }

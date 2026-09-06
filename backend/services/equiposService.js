@@ -187,226 +187,101 @@ exports.obtenerUsuariosPorRol = async (rol) => {
 // - Queda pendiente
 // - Se notifica a los administradores
 // ======================================================
-
 exports.createReporteTransaction = async (
     numSerieLimpio,
+    id_historial,
     fecha_reporte,
     fallaLimpia,
     evidencia,
     estadoOrden = 'pendiente',
     aprobadoPor = null,
-    usuarioReporta = null,
-    rolUsuario = null
+    usuarioReporta = null
 ) => {
 
-    const esAdmin =
-        String(rolUsuario || '').toLowerCase() === 'admin'
+    const client = await db.pool.connect()
 
+    try {
 
-    // ==================================================
-    // SI ES ADMIN
-    // ==================================================
+        await client.query('BEGIN')
 
-    if (esAdmin) {
+        // ==================================================
+        // PONER EQUIPO EN MANTENIMIENTO
+        // ==================================================
 
-        estadoOrden = 'aprobada'
+        await client.query(
+            `UPDATE equipos
+             SET estado = $1
+             WHERE num_serie = $2`,
+            [
+                'En mantenimiento',
+                numSerieLimpio
+            ]
+        )
 
-        aprobadoPor = usuarioReporta
+        // ==================================================
+        // FECHA DE APROBACIÓN
+        // ==================================================
 
-    }
+        const fechaAprobacion =
+            estadoOrden === 'aprobada'
+                ? new Date()
+                : null
 
-
-    const resultado = await prisma.$transaction(async (tx) => {
-
-
-        // ==============================================
-        // BUSCAR EQUIPO
-        // ==============================================
-
-        const equipo = await tx.equipos.findUnique({
-
-            where: {
-
-                num_serie: numSerieLimpio
-
-            }
-
-        })
-
-
-        if (!equipo) {
-
-            throw new Error('EQUIPO_NO_ENCONTRADO')
-
-        }
-
-
-        // ==============================================
-        // ACTUALIZAR ESTADO DEL EQUIPO
-        // ==============================================
-
-        await tx.equipos.update({
-
-            where: {
-
-                num_serie: numSerieLimpio
-
-            },
-
-            data: {
-
-                estado: 'En mantenimiento'
-
-            }
-
-        })
-
-
-        // ==============================================
+        // ==================================================
         // CREAR HISTORIAL
-        // ==============================================
+        // ==================================================
 
-        const historial =
-            await tx.historial_mantenimientos.create({
-
-                data: {
-
-                    // Prisma genera automáticamente
-                    // el id_historial mediante @default(uuid())
-
-                    num_serie:
-                        numSerieLimpio,
-
-                    fecha_reporte:
-                        new Date(fecha_reporte),
-
-                    usuario_reporta:
-                        usuarioReporta || null,
-
-                    falla:
-                        fallaLimpia,
-
-                    evidencia:
-                        evidencia || null,
-
-                    estado_orden:
-                        estadoOrden,
-
-                    aprobada_por:
-                        aprobadoPor || null,
-
-                    fecha_aprobacion:
-                        estadoOrden === 'aprobada'
-                            ? new Date()
-                            : null
-
-                }
-
-            })
-
-
-        return {
-
-            ...historial,
-
-            equipo: equipo.equipo
-
-        }
-
-    })
-
-
-    // ==================================================
-    // NOTIFICACIONES
-    // ==================================================
-
-    if (esAdmin) {
-
-
-        // ==============================================
-        // ADMIN → SOPORTE
-        // ==============================================
-
-        const usuariosSoporte =
-            await prisma.usuarios.findMany({
-
-                where: {
-
-                    rol: 'soporte',
-
-                    estado: 'Activo'
-
-                },
-
-                select: {
-
-                    usuario: true
-
-                }
-
-            })
-
-
-        for (const soporte of usuariosSoporte) {
-
-            await notificacionesService.crear(
-
-                soporte.usuario,
-
-                'mantenimiento',
-
-                `La orden ${resultado.id_historial} del equipo ${resultado.equipo} fue registrada y aprobada automáticamente por el administrador ${usuarioReporta}. Número de serie: ${resultado.num_serie}. Diagnóstico: ${resultado.falla}. Ya puedes gestionar la reparación.`
-
+        const resultado = await client.query(
+            `INSERT INTO historial_mantenimientos (
+                id_historial,
+                num_serie,
+                fecha_reporte,
+                usuario_reporta,
+                falla,
+                evidencia,
+                estado_orden,
+                aprobada_por,
+                fecha_aprobacion
             )
-
-        }
-
-
-    } else {
-
-
-        // ==============================================
-        // SOPORTE / SISTEMAS → ADMINISTRADORES
-        // ==============================================
-
-        const administradores =
-            await prisma.usuarios.findMany({
-
-                where: {
-
-                    rol: 'admin',
-
-                    estado: 'Activo'
-
-                },
-
-                select: {
-
-                    usuario: true
-
-                }
-
-            })
-
-
-        for (const admin of administradores) {
-
-            await notificacionesService.crear(
-
-                admin.usuario,
-
-                'mantenimiento',
-
-                `Nueva orden de mantenimiento ${resultado.id_historial}. Equipo: ${resultado.equipo}. Número de serie: ${resultado.num_serie}. Reportada por: ${usuarioReporta}. Falla: ${resultado.falla}. Debes aprobarla o rechazarla.`
-
+            VALUES (
+                $1,
+                $2,
+                $3,
+                $4,
+                $5,
+                $6,
+                $7::varchar,
+                $8,
+                $9
             )
+            RETURNING *`,
+            [
+                id_historial,
+                numSerieLimpio,
+                fecha_reporte,
+                usuarioReporta || null,
+                fallaLimpia,
+                evidencia || null,
+                estadoOrden,
+                aprobadoPor || null,
+                fechaAprobacion
+            ]
+        )
 
-        }
+        await client.query('COMMIT')
 
+        return resultado.rows[0]
+
+    } catch (e) {
+
+        await client.query('ROLLBACK')
+
+        throw e
+
+    } finally {
+
+        client.release()
     }
-
-
-    return resultado
 }
 
 
@@ -990,28 +865,70 @@ exports.buscarMantenimientos = async (
 // HISTORIAL DE USO DE UN EQUIPO
 // ======================================================
 
+// ======================================================
+// HISTORIAL DE USO DE UN EQUIPO
+// ======================================================
+
 exports.findHistorialEquipo = async (numSerie) => {
 
     const { rows } = await db.query(`
         SELECT
             p.id_prestamo,
             pe.num_serie,
-            p.usuario_destino AS usuario,
-            u.nombre,
-            u.correo,
-            u.area AS area_usuario,
+
+            COALESCE(
+                e.nombre,
+                u.nombre
+            ) AS usuario,
+
+            COALESCE(
+                e.nombre,
+                u.nombre
+            ) AS nombre,
+
+            COALESCE(
+                e.correo,
+                u.correo
+            ) AS correo,
+
+            COALESCE(
+                e.area,
+                u.area,
+                p.area
+            ) AS area_usuario,
+
             u.rol,
+
             p.fecha_prestamo,
             p.fecha_devolucion,
             p.estado,
+            pe.estado AS estado_equipo_prestamo,
             p.observaciones
+
         FROM prestamo_equipos pe
+
         INNER JOIN prestamos p
             ON p.id_prestamo = pe.id_prestamo
+
+        LEFT JOIN empleados e
+            ON e.id_empleado = p.id_empleado
+
         LEFT JOIN usuarios u
-            ON u.usuario = p.usuario_destino
+            ON u.id_usuario = p.id_usuario
+
         WHERE pe.num_serie = $1
-        ORDER BY p.fecha_prestamo DESC
+
+        ORDER BY
+            CASE
+                WHEN pe.estado = 'prestado' THEN 1
+                WHEN p.estado = 'activo' THEN 1
+                WHEN p.estado = 'parcial' THEN 2
+                WHEN pe.estado = 'devuelto' THEN 3
+                WHEN p.estado = 'devuelto' THEN 3
+                ELSE 4
+            END,
+            p.fecha_prestamo DESC
+
     `, [numSerie])
 
     return rows

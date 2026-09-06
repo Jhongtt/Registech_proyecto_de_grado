@@ -1,3 +1,4 @@
+
 const { verifyToken } = require('../utils/jwt')
 
 function authMiddleware(req, res, next) {
@@ -35,10 +36,11 @@ function authMiddleware(req, res, next) {
             maxAge: 15 * 60 * 1000 // 15 MINUTOS
         })
 
-        // (Opcional) Si el frontend necesita leer el token actualizado desde los headers
+        // EL FRONTEND PUEDE RECIBIR EL TOKEN ACTUALIZADO
         res.setHeader('x-refresh-token', newToken)
 
         next()
+
     } catch (error) {
         return res.status(401).json({
             error: 'Token invalido o expirado por inactividad'
@@ -85,3 +87,4 @@ module.exports = {
     requireArea,
     requireRol
 }
+

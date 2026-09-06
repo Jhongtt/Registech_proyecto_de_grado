@@ -29,7 +29,6 @@ const diasRestantes = (fecha) => {
 // FUNCIONES PARA OBTENER DATOS DEL EQUIPO
 // =========================================================
 
-// Obtiene el número de serie sin importar cómo venga del backend
 const obtenerNumeroSerie = (equipo) => {
     if (!equipo) return ""
 
@@ -46,7 +45,6 @@ const obtenerNumeroSerie = (equipo) => {
     )
 }
 
-// Obtiene el nombre del equipo
 const obtenerNombreEquipo = (equipo) => {
     if (!equipo) return "Equipo"
 
@@ -72,10 +70,13 @@ const Prestamos = () => {
     const [prestamos, setPrestamos] = useState([])
     const [equiposDisponibles, setEquiposDisponibles] = useState([])
     const [usuarios, setUsuarios] = useState([])
-    const [areas, setAreas] = useState([])
+    const [empleados, setEmpleados] = useState([])
     const [loading, setLoading] = useState(true)
 
-    // Buscador
+    // =====================================================
+    // BUSCADOR
+    // =====================================================
+
     const [busqueda, setBusqueda] = useState("")
 
     // =====================================================
@@ -85,7 +86,16 @@ const Prestamos = () => {
     const [modalNuevo, setModalNuevo] = useState(false)
 
     const [numSeries, setNumSeries] = useState([])
+
     const [usuarioDestino, setUsuarioDestino] = useState("")
+    const [tipoDestino, setTipoDestino] = useState("")
+
+    const [idEmpleadoSeleccionado, setIdEmpleadoSeleccionado] =
+        useState("")
+
+    const [idUsuarioSeleccionado, setIdUsuarioSeleccionado] =
+        useState("")
+
     const [areaPrestamo, setAreaPrestamo] = useState("")
 
     const [fechaInicio, setFechaInicio] = useState(
@@ -93,7 +103,11 @@ const Prestamos = () => {
     )
 
     const [fechaLimite, setFechaLimite] = useState(
-        toISODate(new Date(Date.now() + 7 * 86400000))
+        toISODate(
+            new Date(
+                Date.now() + 7 * 86400000
+            )
+        )
     )
 
     const [observaciones, setObservaciones] = useState("")
@@ -104,9 +118,11 @@ const Prestamos = () => {
     // MODAL VER PRÉSTAMO
     // =====================================================
 
-    const [prestamoSeleccionado, setPrestamoSeleccionado] = useState(null)
+    const [prestamoSeleccionado, setPrestamoSeleccionado] =
+        useState(null)
 
-    const [equiposSeleccionados, setEquiposSeleccionados] = useState([])
+    const [equiposSeleccionados, setEquiposSeleccionados] =
+        useState([])
 
     const [datosDevolucion, setDatosDevolucion] = useState({})
 
@@ -128,27 +144,32 @@ const Prestamos = () => {
                 resPrestamos,
                 resEquipos,
                 resUsuarios,
-                resAreas
+                resEmpleados
             ] = await Promise.all([
-
                 axios.get(API_ROUTES.PRESTAMOS_ACTIVOS),
-
                 axios.get(API_ROUTES.EQUIPOS),
-
                 axios.get(API_ROUTES.OBTENER_USUARIOS),
-
-                axios.get(API_ROUTES.OBTENER_AREAS)
-
+                axios.get(API_ROUTES.OBTENER_EMPLEADOS)
             ])
 
             console.log("PRESTAMOS:", resPrestamos.data)
             console.log("EQUIPOS:", resEquipos.data)
+            console.log("USUARIOS:", resUsuarios.data)
+            console.log("EMPLEADOS:", resEmpleados.data)
+
+            // -------------------------------------------------
+            // PRÉSTAMOS
+            // -------------------------------------------------
 
             setPrestamos(
                 Array.isArray(resPrestamos.data)
                     ? resPrestamos.data
                     : []
             )
+
+            // -------------------------------------------------
+            // EQUIPOS DISPONIBLES
+            // -------------------------------------------------
 
             setEquiposDisponibles(
                 Array.isArray(resEquipos.data)
@@ -158,6 +179,10 @@ const Prestamos = () => {
                     : []
             )
 
+            // -------------------------------------------------
+            // USUARIOS DEL SISTEMA
+            // -------------------------------------------------
+
             setUsuarios(
                 Array.isArray(resUsuarios.data)
                     ? resUsuarios.data.filter(
@@ -166,15 +191,24 @@ const Prestamos = () => {
                     : []
             )
 
-            setAreas(
-                Array.isArray(resAreas.data)
-                    ? resAreas.data
+            // -------------------------------------------------
+            // EMPLEADOS
+            // -------------------------------------------------
+
+            setEmpleados(
+                Array.isArray(resEmpleados.data)
+                    ? resEmpleados.data.filter(
+                        e => e.estado === "activo"
+                    )
                     : []
             )
 
         } catch (error) {
 
-            console.error("ERROR CARGANDO DATOS:", error)
+            console.error(
+                "ERROR CARGANDO DATOS:",
+                error
+            )
 
             Swal.fire({
                 icon: "error",
@@ -198,6 +232,10 @@ const Prestamos = () => {
         setNumSeries([])
 
         setUsuarioDestino("")
+        setTipoDestino("")
+
+        setIdEmpleadoSeleccionado("")
+        setIdUsuarioSeleccionado("")
 
         setAreaPrestamo("")
 
@@ -239,43 +277,124 @@ const Prestamos = () => {
                 serie
             ]
         })
-
-        const equipo = equiposDisponibles.find(
-            e => obtenerNumeroSerie(e) === serie
-        )
-
-        if (
-            equipo &&
-            equipo.area &&
-            !areaPrestamo
-        ) {
-
-            setAreaPrestamo(
-                equipo.area
-            )
-        }
     }
 
     // =====================================================
-    // SELECCIONAR USUARIO
+    // SELECCIONAR USUARIO / EMPLEADO
     // =====================================================
 
-    const handleSelectUsuario = (nombre) => {
+    const handleSelectUsuario = (valor) => {
 
-        setUsuarioDestino(nombre)
+        if (!valor) {
 
-        const usuario = usuarios.find(
-            x => x.nombre === nombre
-        )
+            setUsuarioDestino("")
+            setTipoDestino("")
 
-        if (
-            usuario &&
-            usuario.area
-        ) {
+            setIdEmpleadoSeleccionado("")
+            setIdUsuarioSeleccionado("")
+
+            setAreaPrestamo("")
+
+            return
+        }
+
+        const [tipo, id] = valor.split(":")
+
+        setTipoDestino(tipo)
+
+        // =================================================
+        // EMPLEADO
+        // =================================================
+
+        if (tipo === "empleado") {
+
+            const empleado = empleados.find(
+                e =>
+                    String(e.id_empleado) ===
+                    String(id)
+            )
+
+            if (!empleado) {
+
+                console.error(
+                    "Empleado no encontrado:",
+                    id
+                )
+
+                return
+            }
+
+            console.log(
+                "EMPLEADO SELECCIONADO:",
+                empleado
+            )
+
+            setUsuarioDestino(
+                empleado.nombre || ""
+            )
+
+            setIdEmpleadoSeleccionado(
+                empleado.id_empleado
+            )
+
+            setIdUsuarioSeleccionado("")
 
             setAreaPrestamo(
-                usuario.area
+                empleado.area || ""
             )
+
+            return
+        }
+
+        // =================================================
+        // USUARIO DEL SISTEMA
+        // =================================================
+
+        if (tipo === "usuario") {
+
+            const usuario = usuarios.find(
+                u =>
+                    String(u.id_usuario) ===
+                    String(id)
+            )
+
+            if (!usuario) {
+
+                console.error(
+                    "Usuario no encontrado:",
+                    id
+                )
+
+                console.log(
+                    "Usuarios disponibles:",
+                    usuarios
+                )
+
+                return
+            }
+
+            console.log(
+                "USUARIO SELECCIONADO:",
+                usuario
+            )
+
+            setUsuarioDestino(
+                usuario.nombre || ""
+            )
+
+            setIdEmpleadoSeleccionado("")
+
+            // IMPORTANTE:
+            // Se utiliza id_usuario, no usuario
+            setIdUsuarioSeleccionado(
+                String(usuario.id_usuario)
+            )
+
+            setAreaPrestamo(
+                usuario.area || ""
+            )
+
+            return
         }
     }
 
@@ -285,15 +404,45 @@ const Prestamos = () => {
 
     const crearPrestamo = async () => {
 
+        // -------------------------------------------------
+        // VALIDAR EQUIPOS
+        // -------------------------------------------------
+
+        if (numSeries.length === 0) {
+
+            Swal.fire({
+                icon: "warning",
+                title: "Equipos requeridos",
+                text: "Selecciona al menos un equipo."
+            })
+
+            return
+        }
+
+        // -------------------------------------------------
+        // VALIDAR DESTINATARIO
+        // -------------------------------------------------
+
+        if (!usuarioDestino) {
+
+            Swal.fire({
+                icon: "warning",
+                title: "Destinatario requerido",
+                text: "Selecciona un usuario o empleado."
+            })
+
+            return
+        }
+
         if (
-            numSeries.length === 0 ||
-            !usuarioDestino
+            !idEmpleadoSeleccionado &&
+            !idUsuarioSeleccionado
         ) {
 
             Swal.fire({
                 icon: "warning",
-                title: "Campos requeridos",
-                text: "Selecciona al menos un equipo y un usuario destino"
+                title: "Destinatario requerido",
+                text: "Selecciona un usuario o empleado."
             })
 
             return
@@ -307,16 +456,40 @@ const Prestamos = () => {
                 observaciones.trim() ||
                 `Préstamo del ${fechaInicio} al ${fechaLimite}`
 
+            // -------------------------------------------------
+            // DATOS QUE SE ENVÍAN AL BACKEND
+            // -------------------------------------------------
+
+            const datosPrestamo = {
+
+                num_series: numSeries,
+
+                id_empleado:
+                    idEmpleadoSeleccionado || null,
+
+                id_usuario:
+                    idUsuarioSeleccionado
+                        ? Number(idUsuarioSeleccionado)
+                        : null,
+
+                fecha_inicio:
+                    fechaInicio,
+
+                fecha_limite:
+                    fechaLimite,
+
+                observaciones:
+                    obsFinal
+            }
+
+            console.log(
+                "DATOS ENVIADOS AL BACKEND:",
+                datosPrestamo
+            )
+
             await axios.post(
                 API_ROUTES.CREAR_PRESTAMO,
-                {
-                    num_series: numSeries,
-                    usuario_destino: usuarioDestino,
-                    area: areaPrestamo,
-                    fecha_inicio: fechaInicio,
-                    fecha_limite: fechaLimite,
-                    observaciones: obsFinal
-                }
+                datosPrestamo
             )
 
             setModalNuevo(false)
@@ -324,7 +497,7 @@ const Prestamos = () => {
             Swal.fire({
                 icon: "success",
                 title: "Préstamo registrado",
-                text: "Los equipos fueron asignados correctamente",
+                text: "Los equipos fueron asignados correctamente.",
                 timer: 2000,
                 showConfirmButton: false
             })
@@ -336,6 +509,11 @@ const Prestamos = () => {
             console.error(
                 "ERROR CREANDO PRÉSTAMO:",
                 error
+            )
+
+            console.error(
+                "RESPUESTA DEL BACKEND:",
+                error.response?.data
             )
 
             Swal.fire({
@@ -354,36 +532,10 @@ const Prestamos = () => {
     }
 
     // =====================================================
-    // AGRUPAR PRÉSTAMOS
+    // PRÉSTAMOS AGRUPADOS
     // =====================================================
 
-    const prestamosAgrupados = Object.values(
-
-        prestamos.reduce(
-            (grupos, prestamo) => {
-
-                const id = prestamo.id_prestamo
-
-                if (!grupos[id]) {
-
-                    grupos[id] = {
-                        ...prestamo,
-                        equipos: []
-                    }
-
-                }
-
-                grupos[id].equipos.push({
-                    ...prestamo
-                })
-
-                return grupos
-
-            },
-            {}
-        )
-
-    )
+    const prestamosAgrupados = prestamos
 
     // =====================================================
     // PRÉSTAMOS ACTIVOS
@@ -419,7 +571,25 @@ const Prestamos = () => {
 
                 ||
 
-                p.usuario_destino
+                p.empleado
+                    ?.toLowerCase()
+                    .includes(texto)
+
+                ||
+
+                p.destinatario
+                    ?.toLowerCase()
+                    .includes(texto)
+
+                ||
+
+                p.usuario
+                    ?.toLowerCase()
+                    .includes(texto)
+
+                ||
+
+                p.documento_empleado
                     ?.toLowerCase()
                     .includes(texto)
 
@@ -458,11 +628,8 @@ const Prestamos = () => {
                             .includes(texto)
 
                     )
-
                 })
-
             )
-
         })
 
     // =====================================================
@@ -519,16 +686,13 @@ const Prestamos = () => {
                     serie =>
                         serie !== numSerie
                 )
-
             }
 
             return [
                 ...prev,
                 numSerie
             ]
-
         })
-
     }
 
     // =====================================================
@@ -563,12 +727,11 @@ const Prestamos = () => {
             setEquiposSeleccionados(
                 series
             )
-
         }
     }
 
     // =====================================================
-    // OBSERVACIÓN
+    // OBSERVACIÓN DEVOLUCIÓN
     // =====================================================
 
     const cambiarObservacion = (
@@ -590,11 +753,10 @@ const Prestamos = () => {
             }
 
         }))
-
     }
 
     // =====================================================
-    // IMAGEN
+    // IMAGEN DEVOLUCIÓN
     // =====================================================
 
     const cambiarImagen = (
@@ -616,7 +778,6 @@ const Prestamos = () => {
             }
 
         }))
-
     }
 
     // =====================================================
@@ -647,8 +808,6 @@ const Prestamos = () => {
             }
         )
 
-        // Si no encontramos serie,
-        // NO hacemos la petición
         if (!numSerie) {
 
             Swal.fire({
@@ -681,7 +840,6 @@ const Prestamos = () => {
                 "observaciones",
                 datos.observaciones.trim()
             )
-
         }
 
         if (datos.evidencia) {
@@ -690,7 +848,6 @@ const Prestamos = () => {
                 "evidencia",
                 datos.evidencia
             )
-
         }
 
         try {
@@ -765,7 +922,6 @@ const Prestamos = () => {
                     return equiposSeleccionados.includes(
                         serie
                     )
-
                 }
             ) || []
 
@@ -805,7 +961,6 @@ const Prestamos = () => {
 
                 confirmButtonColor:
                     "#16a34a"
-
             })
 
         if (
@@ -837,7 +992,6 @@ const Prestamos = () => {
                     exitosos++
 
                 }
-
             }
 
             if (
@@ -865,7 +1019,6 @@ const Prestamos = () => {
                     text:
                         `${exitosos} de ${seleccionados.length} equipos fueron devueltos.`
                 })
-
             }
 
             cerrarPrestamo()
@@ -969,7 +1122,6 @@ const Prestamos = () => {
 
                 confirmButtonColor:
                     "#16a34a"
-
             })
 
         if (
@@ -977,7 +1129,6 @@ const Prestamos = () => {
         ) {
 
             return
-
         }
 
         try {
@@ -1003,7 +1154,6 @@ const Prestamos = () => {
                     exitosos++
 
                 }
-
             }
 
             if (
@@ -1033,7 +1183,6 @@ const Prestamos = () => {
                     text:
                         `${exitosos} de ${equipos.length} equipos fueron devueltos.`
                 })
-
             }
 
             cerrarPrestamo()
@@ -1062,15 +1211,33 @@ const Prestamos = () => {
     }
 
     // =====================================================
-    // USUARIO SELECCIONADO
+    // DESTINATARIO SELECCIONADO
     // =====================================================
 
     const usuarioSeleccionadoObj =
         usuarios.find(
             u =>
-                u.nombre ===
-                usuarioDestino
+                String(u.id_usuario) ===
+                String(idUsuarioSeleccionado)
         )
+
+    const empleadoSeleccionadoObj =
+        empleados.find(
+            e =>
+                String(e.id_empleado) ===
+                String(idEmpleadoSeleccionado)
+        )
+
+    // =====================================================
+    // CORREO DEL DESTINATARIO
+    // =====================================================
+
+    const correoDestino =
+        tipoDestino === "empleado"
+            ? empleadoSeleccionadoObj?.correo
+            : tipoDestino === "usuario"
+                ? usuarioSeleccionadoObj?.correo
+                : null
 
     // =====================================================
     // CONTADORES
@@ -1275,7 +1442,11 @@ const Prestamos = () => {
                                         </td>
 
                                         <td>
-                                            {p.usuario_destino || "-"}
+                                            {p.destinatario ||
+                                                p.empleado ||
+                                                p.usuario ||
+                                                "-"
+                                            }
                                         </td>
 
                                         <td>
@@ -1335,7 +1506,6 @@ const Prestamos = () => {
                                                         </div>
 
                                                     )
-
                                                 }
 
                                                 return (
@@ -1429,11 +1599,17 @@ const Prestamos = () => {
 
                                     <small className="text-muted">
 
-                                        {prestamoSeleccionado.usuario_destino}
+                                        {prestamoSeleccionado.destinatario ||
+                                            prestamoSeleccionado.empleado ||
+                                            prestamoSeleccionado.usuario ||
+                                            "Sin destinatario"
+                                        }
 
                                         {" • "}
 
-                                        {prestamoSeleccionado.area || "Sin área"}
+                                        {prestamoSeleccionado.area ||
+                                            "Sin área"
+                                        }
 
                                     </small>
 
@@ -1560,11 +1736,10 @@ const Prestamos = () => {
                                                     numSerie ||
                                                     `equipo-${index}`
                                                 }
-                                                className={`border rounded p-3 mb-3 ${
-                                                    seleccionado
-                                                        ? "border-success bg-light"
-                                                        : ""
-                                                }`}
+                                                className={`border rounded p-3 mb-3 ${seleccionado
+                                                    ? "border-success bg-light"
+                                                    : ""
+                                                    }`}
                                             >
 
                                                 <div className="d-flex align-items-start gap-3">
@@ -1618,13 +1793,13 @@ const Prestamos = () => {
                                                                 <div className="small text-muted">
 
                                                                     Serie:
-
                                                                     {" "}
-
                                                                     {numSerie || (
+
                                                                         <span className="text-danger fw-bold">
                                                                             SIN NÚMERO DE SERIE
                                                                         </span>
+
                                                                     )}
 
                                                                 </div>
@@ -1696,7 +1871,6 @@ const Prestamos = () => {
                                                                         <div className="small text-success mt-1">
 
                                                                             ✓{" "}
-
                                                                             {
                                                                                 datos.evidencia.name
                                                                             }
@@ -1835,7 +2009,9 @@ const Prestamos = () => {
                                     }
                                 >
 
-                                    {/* EQUIPOS */}
+                                    {/* =================================
+                                        EQUIPOS
+                                    ================================= */}
 
                                     <div className="mb-3">
 
@@ -1882,9 +2058,7 @@ const Prestamos = () => {
                                                         >
 
                                                             {nombre}
-
                                                             {" "}
-
                                                             ({serie})
 
                                                         </option>
@@ -1976,17 +2150,27 @@ const Prestamos = () => {
 
                                     </div>
 
-                                    {/* USUARIO */}
+                                    {/* =================================
+                                        USUARIO / EMPLEADO
+                                    ================================= */}
 
                                     <div className="mb-3">
 
                                         <label className="form-label fw-semibold">
+
                                             Usuario Destino
+
                                         </label>
 
                                         <select
                                             className="form-select"
-                                            value={usuarioDestino}
+                                            value={
+                                                tipoDestino === "empleado"
+                                                    ? `empleado:${idEmpleadoSeleccionado}`
+                                                    : tipoDestino === "usuario"
+                                                        ? `usuario:${idUsuarioSeleccionado}`
+                                                        : ""
+                                            }
                                             onChange={e =>
                                                 handleSelectUsuario(
                                                     e.target.value
@@ -1995,32 +2179,68 @@ const Prestamos = () => {
                                         >
 
                                             <option value="">
-                                                Seleccionar usuario...
+                                                Seleccionar usuario o empleado...
                                             </option>
 
-                                            {usuarios.map(u => (
+                                            {/* =================================
+                                                USUARIOS DEL SISTEMA
+                                            ================================= */}
 
-                                                <option
-                                                    key={u.usuario}
-                                                    value={u.nombre}
-                                                >
+                                            <optgroup label="Usuarios">
 
-                                                    {u.nombre}
+                                                {usuarios.map(u => (
 
-                                                    {u.area
-                                                        ? ` (${u.area})`
-                                                        : ""
-                                                    }
+                                                    <option
+                                                        key={`usuario-${u.id_usuario}`}
+                                                        value={`usuario:${u.id_usuario}`}
+                                                    >
 
-                                                </option>
+                                                        {u.nombre}
 
-                                            ))}
+                                                        {u.area
+                                                            ? ` (${u.area})`
+                                                            : ""
+                                                        }
+
+                                                    </option>
+
+                                                ))}
+
+                                            </optgroup>
+
+                                            {/* =================================
+                                                EMPLEADOS
+                                            ================================= */}
+
+                                            <optgroup label="Empleados">
+
+                                                {empleados.map(e => (
+
+                                                    <option
+                                                        key={`empleado-${e.id_empleado}`}
+                                                        value={`empleado:${e.id_empleado}`}
+                                                    >
+
+                                                        {e.nombre}
+
+                                                        {e.area
+                                                            ? ` (${e.area})`
+                                                            : ""
+                                                        }
+
+                                                    </option>
+
+                                                ))}
+
+                                            </optgroup>
 
                                         </select>
 
                                     </div>
 
-                                    {/* ÁREA */}
+                                    {/* =================================
+                                        ÁREA AUTOMÁTICA
+                                    ================================= */}
 
                                     <div className="mb-3">
 
@@ -2028,36 +2248,19 @@ const Prestamos = () => {
                                             Área / Departamento
                                         </label>
 
-                                        <select
-                                            className="form-select"
+                                        <input
+                                            type="text"
+                                            className="form-control"
                                             value={areaPrestamo}
-                                            onChange={e =>
-                                                setAreaPrestamo(
-                                                    e.target.value
-                                                )
-                                            }
-                                        >
-
-                                            <option value="">
-                                                Seleccionar área...
-                                            </option>
-
-                                            {areas.map(a => (
-
-                                                <option
-                                                    key={a.area}
-                                                    value={a.area}
-                                                >
-                                                    {a.area}
-                                                </option>
-
-                                            ))}
-
-                                        </select>
+                                            readOnly
+                                            placeholder="Se asignará automáticamente"
+                                        />
 
                                     </div>
 
-                                    {/* FECHAS */}
+                                    {/* =================================
+                                        FECHAS
+                                    ================================= */}
 
                                     <div className="row g-2 mb-3">
 
@@ -2086,7 +2289,6 @@ const Prestamos = () => {
                                                         setFechaLimite(
                                                             e.target.value
                                                         )
-
                                                     }
 
                                                 }}
@@ -2116,7 +2318,9 @@ const Prestamos = () => {
 
                                     </div>
 
-                                    {/* OBSERVACIONES */}
+                                    {/* =================================
+                                        OBSERVACIONES
+                                    ================================= */}
 
                                     <div className="mb-3">
 
@@ -2138,7 +2342,9 @@ const Prestamos = () => {
 
                                     </div>
 
-                                    {/* CORREO */}
+                                    {/* =================================
+                                        CORREO
+                                    ================================= */}
 
                                     <div className="form-check mb-2">
 
@@ -2164,18 +2370,15 @@ const Prestamos = () => {
                                         </label>
 
                                         {enviarCorreo &&
-                                            usuarioSeleccionadoObj?.correo && (
+                                            correoDestino && (
 
                                                 <div className="small text-muted ps-1 mt-1">
 
                                                     Correo:
-
                                                     {" "}
 
                                                     <strong>
-                                                        {
-                                                            usuarioSeleccionadoObj.correo
-                                                        }
+                                                        {correoDestino}
                                                     </strong>
 
                                                 </div>
@@ -2187,6 +2390,10 @@ const Prestamos = () => {
                                 </form>
 
                             </div>
+
+                            {/* =========================================
+                                FOOTER
+                            ========================================= */}
 
                             <div className="modal-footer">
 
@@ -2208,7 +2415,10 @@ const Prestamos = () => {
                                     disabled={
                                         guardando ||
                                         numSeries.length === 0 ||
-                                        !usuarioDestino
+                                        (
+                                            !idEmpleadoSeleccionado &&
+                                            !idUsuarioSeleccionado
+                                        )
                                     }
                                 >
 

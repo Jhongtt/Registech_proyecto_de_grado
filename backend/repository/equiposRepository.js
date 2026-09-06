@@ -189,30 +189,25 @@ exports.createReporteTransaction = async (
 
         await client.query('BEGIN')
 
-
         // ==================================================
         // PONER EQUIPO EN MANTENIMIENTO
         // ==================================================
 
         await client.query(
-
             `UPDATE equipos
              SET estado = $1
              WHERE num_serie = $2`,
-
             [
                 'En mantenimiento',
                 numSerieLimpio
             ]
         )
 
-
         // ==================================================
         // CREAR HISTORIAL
         // ==================================================
 
-        await client.query(
-
+        const resultado = await client.query(
             `INSERT INTO historial_mantenimientos (
                 id_historial,
                 num_serie,
@@ -238,8 +233,8 @@ exports.createReporteTransaction = async (
                     THEN CURRENT_DATE
                     ELSE NULL
                 END
-            )`,
-
+            )
+            RETURNING *`,
             [
                 id_historial,
                 numSerieLimpio,
@@ -252,8 +247,9 @@ exports.createReporteTransaction = async (
             ]
         )
 
-
         await client.query('COMMIT')
+
+        return resultado.rows[0]
 
     } catch (e) {
 

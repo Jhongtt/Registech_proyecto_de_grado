@@ -1,5 +1,11 @@
 const prestamosService = require('../services/prestamosService')
 const notificacionesService = require('../services/notificacionesService')
+const auditoriaService = require('../services/auditoriaService')
+
+
+// ======================================================
+// OBTENER TODOS LOS PRÉSTAMOS
+// ======================================================
 
 exports.getPrestamos = async (req, res) => {
     try {
@@ -7,9 +13,17 @@ exports.getPrestamos = async (req, res) => {
         res.json(prestamos)
     } catch (error) {
         console.error('Error al obtener prestamos:', error)
-        res.status(500).json({ error: 'Error al obtener prestamos' })
+
+        res.status(500).json({
+            error: 'Error al obtener prestamos'
+        })
     }
 }
+
+
+// ======================================================
+// OBTENER PRÉSTAMOS ACTIVOS
+// ======================================================
 
 exports.getPrestamosActivos = async (req, res) => {
     try {
@@ -17,82 +31,210 @@ exports.getPrestamosActivos = async (req, res) => {
         res.json(prestamos)
     } catch (error) {
         console.error('Error al obtener prestamos activos:', error)
-        res.status(500).json({ error: 'Error al obtener prestamos activos' })
+
+        res.status(500).json({
+            error: 'Error al obtener prestamos activos'
+        })
     }
 }
+
+
+// ======================================================
+// BUSCAR PRÉSTAMO ACTIVO POR EQUIPO
+// ======================================================
 
 exports.getPrestamoActivoPorEquipo = async (req, res) => {
+
     try {
-        const prestamo = await prestamosService.getPrestamoActivoPorEquipo(req.params.num_serie)
-        if (!prestamo) return res.status(404).json({ error: 'No hay préstamo activo para este equipo' })
-        res.json(prestamo)
-    } catch (error) {
-        console.error('Error al buscar préstamo activo:', error)
-        res.status(500).json({ error: 'Error al buscar préstamo activo' })
-    }
-}
 
+        const prestamo =
+            await prestamosService.getPrestamoActivoPorEquipo(
+                req.params.num_serie
+            )
 
-exports.crearPrestamo = async (req, res) => {
-    try {
-        await prestamosService.crearPrestamo(
-            req.body.num_series,
-            req.body.usuario_destino,
-            req.body.observaciones,
-            req.body.fecha_inicio,
-            req.body.fecha_limite,
-            req.body.area
-        )
-
-        const auditoriaService = require('../services/auditoriaService')
-
-        const rangoFechas = req.body.fecha_inicio && req.body.fecha_limite
-            ? ` del ${req.body.fecha_inicio} al ${req.body.fecha_limite}`
-            : ''
-
-        const equipos = req.body.num_series.join(', ')
-
-        await auditoriaService.registrar(
-            req.usuario.usuario,
-            `Prestó los equipos ${equipos} a ${req.body.usuario_destino}${rangoFechas}`
-        )
-
-        // NOTIFICACIÓN PARA ADMINISTRADORES
-        await notificacionesService.notificarAdmins(
-            'prestamos',
-            `El usuario ${req.usuario.usuario} prestó los equipos ${equipos} a ${req.body.usuario_destino}.`
-        )
-
-        res.status(201).json({
-            mensaje: 'Prestamo registrado exitosamente'
-        })
-
-    } catch (error) {
-        if (error.message === 'REQUERIDOS') {
-            return res.status(400).json({
-                error: 'Debe seleccionar al menos un equipo y un usuario destino'
+        if (!prestamo) {
+            return res.status(404).json({
+                error: 'No hay préstamo activo para este equipo'
             })
         }
 
+        res.json(prestamo)
+
+    } catch (error) {
+
+        console.error(
+            'Error al buscar préstamo activo:',
+            error
+        )
+
+        res.status(500).json({
+            error: 'Error al buscar préstamo activo'
+        })
+    }
+}
+
+
+// ======================================================
+// CREAR PRÉSTAMO
+// ======================================================
+
+exports.crearPrestamo = async (req, res) => {
+
+    try {
+
+        const {
+            num_series,
+            id_empleado,
+            id_usuario,
+            observaciones,
+            fecha_inicio,
+            fecha_limite
+        } = req.body
+
+
+        // ==============================================
+        // CREAR PRÉSTAMO
+        // ==============================================
+
+        await prestamosService.crearPrestamo(
+            num_series,
+            id_empleado,
+            id_usuario,
+            observaciones,
+            fecha_inicio,
+            fecha_limite
+        )
+
+
+        // ==============================================
+        // DATOS PARA AUDITORÍA
+        // ==============================================
+
+        const equipos = Array.isArray(num_series)
+            ? num_series.join(', ')
+            : ''
+
+
+        const destinatario =
+            id_empleado
+                ? `empleado ${id_empleado}`
+                : `usuario del sistema ${id_usuario}`
+
+
+        const rangoFechas =
+            fecha_inicio && fecha_limite
+                ? ` del ${fecha_inicio} al ${fecha_limite}`
+                : ''
+
+
+        await auditoriaService.registrar(
+            req.usuario.usuario,
+            `Prestó los equipos ${equipos} al ${destinatario}${rangoFechas}`
+        )
+
+
+        // ==============================================
+        // NOTIFICACIÓN
+        // ==============================================
+
+        await notificacionesService.notificarAdmins(
+            'prestamos',
+            `Se registró un préstamo de los equipos ${equipos} al ${destinatario}.`
+        )
+
+
+        // ==============================================
+        // RESPUESTA
+        // ==============================================
+
+        res.status(201).json({
+            mensaje: 'Préstamo registrado exitosamente'
+        })
+
+
+    } catch (error) {
+
+        // ==============================================
+        // ERRORES DE VALIDACIÓN
+        // ==============================================
+
+        if (error.message === 'REQUERIDOS') {
+
+            return res.status(400).json({
+                error: 'Debe seleccionar al menos un equipo y un destinatario'
+            })
+        }
+
+
+        if (error.message === 'DESTINATARIO_REQUERIDO') {
+
+            return res.status(400).json({
+                error: 'Debe seleccionar un empleado o un usuario'
+            })
+        }
+
+
+        if (error.message === 'DESTINATARIO_INVALIDO') {
+
+            return res.status(400).json({
+                error: 'Solo puede seleccionar un empleado o un usuario'
+            })
+        }
+
+
+        if (error.message === 'EMPLEADO_NO_ENCONTRADO') {
+
+            return res.status(404).json({
+                error: 'El empleado seleccionado no existe'
+            })
+        }
+
+
+        if (error.message === 'USUARIO_NO_ENCONTRADO') {
+
+            return res.status(404).json({
+                error: 'El usuario seleccionado no existe'
+            })
+        }
+
+
+        if (error.message === 'EQUIPOS_REQUERIDOS') {
+
+            return res.status(400).json({
+                error: 'Debe seleccionar al menos un equipo'
+            })
+        }
+
+
         if (error.message === 'EQUIPO_NO_ENCONTRADO') {
+
             return res.status(404).json({
                 error: 'Uno de los equipos no fue encontrado'
             })
         }
 
+
         if (error.message === 'EQUIPO_NO_DISPONIBLE') {
+
             return res.status(400).json({
                 error: 'Uno de los equipos no está disponible para préstamo'
             })
         }
 
+
         if (error.message === 'FECHAS_INVALIDAS') {
+
             return res.status(400).json({
                 error: 'La fecha límite no puede ser anterior a la fecha de inicio'
             })
         }
 
-        console.error('Error al crear prestamo:', error)
+
+        console.error(
+            'Error al crear prestamo:',
+            error
+        )
+
 
         res.status(500).json({
             error: 'Error al crear prestamo'
@@ -100,55 +242,89 @@ exports.crearPrestamo = async (req, res) => {
     }
 }
 
+
+// ======================================================
+// DEVOLVER PRÉSTAMO COMPLETO
+// ======================================================
+
 exports.devolverPrestamo = async (req, res) => {
+
     try {
-        const observaciones = req.body.observaciones || null
-        const evidencia = req.file ? req.file.filename : null
 
-        await prestamosService.devolverPrestamo(
-            req.params.id,
-            observaciones,
-            evidencia
-        )
+        const observaciones =
+            req.body.observaciones || null
 
-        const auditoriaService = require('../services/auditoriaService')
+        const evidencia =
+            req.file
+                ? req.file.filename
+                : null
+
+
+        const resultado =
+            await prestamosService.devolverPrestamo(
+                req.params.id,
+                observaciones,
+                evidencia
+            )
+
+
+        // ==============================================
+        // AUDITORÍA
+        // ==============================================
 
         await auditoriaService.registrar(
             req.usuario.usuario,
-            `Registró la devolución del préstamo ${req.params.id}`
+            `Registró la devolución total del préstamo ${req.params.id}`
         )
 
-        // NOTIFICACIÓN PARA ADMINISTRADORES
+
+        // ==============================================
+        // NOTIFICACIÓN
+        // ==============================================
+
         await notificacionesService.notificarAdmins(
             'prestamos',
             `El usuario ${req.usuario.usuario} registró la devolución total del préstamo #${req.params.id}.`
         )
 
+
         res.status(200).json({
-            mensaje: 'Devolución registrada exitosamente'
+            mensaje: 'Devolución registrada exitosamente',
+            ...resultado
         })
+
 
     } catch (error) {
 
-        if (error.message === 'REQUERIDO') {
+        if (error.message === 'REQUERIDOS') {
+
             return res.status(400).json({
-                error: 'El id del prestamo es requerido'
+                error: 'El id del préstamo es requerido'
             })
         }
+
 
         if (error.message === 'PRESTAMO_NO_ENCONTRADO') {
+
             return res.status(404).json({
-                error: 'Prestamo no encontrado'
+                error: 'Préstamo no encontrado'
             })
         }
+
 
         if (error.message === 'PRESTAMO_YA_DEVUELTO') {
+
             return res.status(400).json({
-                error: 'Este prestamo ya fue devuelto'
+                error: 'Este préstamo ya fue devuelto'
             })
         }
 
-        console.error('Error al devolver prestamo:', error)
+
+        console.error(
+            'Error al devolver prestamo:',
+            error
+        )
+
 
         res.status(500).json({
             error: 'Error al devolver prestamo'
@@ -156,57 +332,98 @@ exports.devolverPrestamo = async (req, res) => {
     }
 }
 
+
+// ======================================================
+// DEVOLVER UN SOLO EQUIPO
+// ======================================================
+
 exports.devolverEquipo = async (req, res) => {
+
     try {
-        const observaciones = req.body.observaciones || null
-        const evidencia = req.file ? req.file.filename : null
 
-        const resultado = await prestamosService.devolverEquipo(
-            req.params.id,
-            req.params.num_serie,
-            observaciones,
-            evidencia
-        )
+        const observaciones =
+            req.body.observaciones || null
 
-        const auditoriaService = require('../services/auditoriaService')
+        const evidencia =
+            req.file
+                ? req.file.filename
+                : null
+
+
+        const resultado =
+            await prestamosService.devolverEquipo(
+                req.params.id,
+                req.params.num_serie,
+                observaciones,
+                evidencia
+            )
+
+
+        // ==============================================
+        // AUDITORÍA
+        // ==============================================
 
         await auditoriaService.registrar(
             req.usuario.usuario,
             `Registró la devolución del equipo ${req.params.num_serie} del préstamo ${req.params.id}`
         )
 
-        // NOTIFICACIÓN PARA ADMINISTRADORES
+
+        // ==============================================
+        // NOTIFICACIÓN
+        // ==============================================
+
         await notificacionesService.notificarAdmins(
             'prestamos',
             `El usuario ${req.usuario.usuario} devolvió el equipo ${req.params.num_serie} del préstamo #${req.params.id}.`
         )
+
 
         res.status(200).json({
             mensaje: 'Equipo devuelto exitosamente',
             ...resultado
         })
 
+
     } catch (error) {
 
         if (error.message === 'PRESTAMO_NO_ENCONTRADO') {
+
             return res.status(404).json({
                 error: 'Préstamo no encontrado'
             })
         }
 
+
         if (error.message === 'PRESTAMO_YA_DEVUELTO') {
+
             return res.status(400).json({
                 error: 'Este préstamo ya fue devuelto'
             })
         }
 
+
         if (error.message === 'EQUIPO_NO_PERTENECE') {
+
             return res.status(400).json({
                 error: 'El equipo no pertenece a este préstamo'
             })
         }
 
-        console.error('Error al devolver equipo:', error)
+
+        if (error.message === 'EQUIPO_YA_DEVUELTO') {
+
+            return res.status(400).json({
+                error: 'Este equipo ya fue devuelto'
+            })
+        }
+
+
+        console.error(
+            'Error al devolver equipo:',
+            error
+        )
+
 
         res.status(500).json({
             error: 'Error al devolver equipo'
@@ -214,61 +431,67 @@ exports.devolverEquipo = async (req, res) => {
     }
 }
 
+
+// ======================================================
+// HISTORIAL DE EQUIPO
+// ======================================================
+
 exports.historialEquipo = async (req, res) => {
+
     try {
-        const historial = await prestamosService.historialEquipo(req.params.num_serie)
+
+        const historial =
+            await prestamosService.historialEquipo(
+                req.params.num_serie
+            )
+
         res.json(historial)
+
     } catch (error) {
-        if (error.message === 'REQUERIDO') return res.status(400).json({ error: 'El numero de serie es requerido' })
-        console.error('Error al obtener historial:', error)
-        res.status(500).json({ error: 'Error al obtener historial' })
+
+        if (error.message === 'REQUERIDOS') {
+
+            return res.status(400).json({
+                error: 'El número de serie es requerido'
+            })
+        }
+
+
+        console.error(
+            'Error al obtener historial:',
+            error
+        )
+
+
+        res.status(500).json({
+            error: 'Error al obtener historial'
+        })
     }
 }
+
+
+// ======================================================
+// ESTADÍSTICAS
+// ======================================================
 
 exports.getEstadisticas = async (req, res) => {
+
     try {
-        const stats = await prestamosService.getEstadisticas()
+
+        const stats =
+            await prestamosService.getEstadisticas()
+
         res.json(stats)
+
     } catch (error) {
-        console.error('Error al obtener estadisticas:', error)
-        res.status(500).json({ error: 'Error al obtener estadisticas' })
+
+        console.error(
+            'Error al obtener estadisticas:',
+            error
+        )
+
+        res.status(500).json({
+            error: 'Error al obtener estadisticas'
+        })
     }
 }
-
-exports.devolverEquipoParcial = async (req, res) => {
-    try {
-        const { prestamoId, series, observaciones } = req.body;
-
-        if (!prestamoId || !series || !Array.isArray(series) || series.length === 0) {
-            return res.status(400).json({ error: 'El id del préstamo y las series son requeridos' });
-        }
-
-        for (const num_serie of series) {
-            await prestamosService.devolverEquipoParcial(prestamoId, num_serie, observaciones);
-        }
-
-        const auditoriaService = require('../services/auditoriaService');
-        await auditoriaService.registrar(
-            req.usuario.usuario, 
-            `Registró la devolución parcial de equipos (${series.join(', ')}) del préstamo ${prestamoId}`
-        );
-
-        // NOTIFICACIÓN PARA ADMINISTRADORES
-        await notificacionesService.notificarAdmins(
-            'prestamos',
-            `El usuario ${req.usuario.usuario} registró una devolución parcial (${series.join(', ')}) del préstamo #${prestamoId}.`
-        );
-
-        res.status(200).json({ mensaje: 'Devolución parcial registrada exitosamente' });
-    } catch (error) {
-        if (error.message === 'EQUIPO_NO_ENCONTRADO_EN_PRESTAMO') {
-            return res.status(404).json({ error: 'Uno de los equipos no pertenece a este préstamo' });
-        }
-        if (error.message === 'EQUIPO_YA_DEVUELTO') {
-            return res.status(400).json({ error: 'Uno de los equipos ya había sido devuelto anteriormente' });
-        }
-
-        console.error('Error al registrar devolución parcial:', error);
-        res.status(500).json({ error: 'Error al registrar devolución parcial' });
-    }
-};
