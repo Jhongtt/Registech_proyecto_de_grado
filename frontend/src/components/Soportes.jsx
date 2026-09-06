@@ -145,8 +145,8 @@
                     Swal.fire({
                         icon: 'success',
                         title: 'Orden registrada',
-                       text: esAdmin
-    ? 'La orden fue aprobada automáticamente y se notificó a Soporte.'
+                      text: esAdmin
+    ? 'La orden fue registrada y aprobada automáticamente. Se notificó al personal de mantenimiento.'
     : 'El administrador debe aprobar la orden antes de iniciar la reparación',
                         timer: 2500,
                         showConfirmButton: false
@@ -746,7 +746,7 @@
                                                 ) : (
                                                     <>
                                                         <i className="bi bi-send me-1"></i>
-                                                        Enviar para aprobación
+                                                        {esAdmin ? 'Registrar y aprobar' : 'Enviar para aprobación'}Enviar para aprobación
                                                     </>
                                                 )}
 

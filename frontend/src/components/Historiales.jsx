@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import axios from "axios"
 import Swal from "sweetalert2"
 import { API_ROUTES } from "../api/apiRoutes"
@@ -8,6 +8,28 @@ const Historiales = ({ usuario }) => {
     const [filter, setFilter] = useState("")
     const [detalle, setDetalle] = useState(null)
 
+    useEffect(() => {
+    cargarHistorial()
+}, [])
+
+const cargarHistorial = () => {
+    axios.get(API_ROUTES.HISTORIAL_MANTENIMIENTOS)
+        .then(response => {
+            setMantenimientos(
+                Array.isArray(response.data) ? response.data : []
+            )
+        })
+        .catch(error => {
+            console.error("Error al cargar historial:", error)
+
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No se pudo cargar el historial de mantenimientos'
+            })
+        })
+}
+
     // FUNCION PARA MANEJAR LOS CAMBIOS EN EL CAMPO FILTRO
     const handleFilterChange = (e) => {
         const value = e.target.value
@@ -15,39 +37,38 @@ const Historiales = ({ usuario }) => {
     }
 
     // FUNCION PARA SOLICITAR EL HISTORIAL
-    const obtenerHistorial = () => {
-        // VALIDAR QUE NO ESTE VACIO EL CAMPO DE FILTRO
-        if (!filter) {
+const obtenerHistorial = () => {
+    if (!filter.trim()) {
+        cargarHistorial()
+        return
+    }
+
+    axios.post(API_ROUTES.MANTENIMIENTOS_FIND, {
+        filter: filter.trim()
+    })
+        .then(response => {
+            if (response.data.length === 0) {
+                setMantenimientos([])
+
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Sin registros',
+                    text: 'No existen reportes de mantenimientos'
+                })
+            } else {
+                setMantenimientos(response.data)
+            }
+        })
+        .catch(err => {
+            console.error("Error al buscar historial:", err)
+
             Swal.fire({
                 icon: 'error',
-                title: 'Campos incompletos',
-                text: 'Por favor introduce el id del historial, el numero de serie o el tecnico'
+                title: 'Error al enviar la solicitud',
+                text: 'Hubo un problema al enviar la solicitud, inténtalo nuevamente'
             })
-            return
-        }
-
-        // ENVIAMOS LA SOLICITUD AL BACKEND
-        axios.post(API_ROUTES.MANTENIMIENTOS_FIND, { filter })
-            .then(response => {
-                if (response.data.length === 0) {
-                    setMantenimientos([])
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Sin registros',
-                        text: 'No existen reportes de mantenimientos'
-                    })
-                } else {
-                    setMantenimientos(response.data)
-                }
-            })
-            .catch(err => {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error al enviar la solicitud',
-                    text: 'Hubo un problema al enviar la solicitud, intentalo nuevamente'
-                })
-            })
-    }
+        })
+}
 
     return (
         <div className="card">

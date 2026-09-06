@@ -2,9 +2,6 @@ const express = require('express')
 
 const router = express.Router()
 
-
-const prestamosController = require('../controllers/prestamosController')
-
 const {
     getPrestamos,
     getPrestamosActivos,
@@ -12,11 +9,11 @@ const {
     crearPrestamo,
     devolverEquipo,
     historialEquipo,
-    getEstadisticas,
-    devolverEquipoParcial
+    getEstadisticas
 } = require('../controllers/prestamosController')
 
-const { authMiddleware } = require('../middlewares/auth')
+const { authMiddleware, requireRol } = require('../middlewares/auth')
+
 const { validate } = require('../middlewares/validate')
 
 const {
@@ -25,8 +22,6 @@ const {
 } = require('../schemas/prestamos.schema')
 
 const { upload } = require('../middlewares/upload')
-
-
 
 // ======================================================
 // OBTENER TODOS LOS PRÉSTAMOS
@@ -38,7 +33,6 @@ router.get(
     getPrestamos
 )
 
-
 // ======================================================
 // OBTENER PRÉSTAMOS ACTIVOS
 // ======================================================
@@ -48,7 +42,6 @@ router.get(
     authMiddleware,
     getPrestamosActivos
 )
-
 
 // ======================================================
 // OBTENER PRÉSTAMO ACTIVO POR EQUIPO
@@ -60,18 +53,18 @@ router.get(
     getPrestamoActivoPorEquipo
 )
 
-
 // ======================================================
 // CREAR PRÉSTAMO
+// SOLO ADMIN
 // ======================================================
 
 router.post(
     '/prestamos',
     authMiddleware,
+    requireRol('admin'),
     validate(crearPrestamoSchema),
     crearPrestamo
 )
-
 
 // ======================================================
 // DEVOLVER UN SOLO EQUIPO
@@ -84,7 +77,6 @@ router.post(
     devolverEquipo
 )
 
-
 // ======================================================
 // HISTORIAL DE UN EQUIPO
 // ======================================================
@@ -96,7 +88,6 @@ router.get(
     historialEquipo
 )
 
-
 // ======================================================
 // ESTADÍSTICAS
 // ======================================================
@@ -106,17 +97,5 @@ router.get(
     authMiddleware,
     getEstadisticas
 )
-
-
-// ======================================================
-// DEVOLUCIÓN PARCIAL EN UN PRÉSTAMO MÚLTIPLE
-// ======================================================
-
-router.post(
-    '/devolucion-parcial',
-    authMiddleware,
-    prestamosController.devolverEquipoParcial
-)
-
 
 module.exports = router

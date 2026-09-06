@@ -1,21 +1,25 @@
-const { z } = require('zod');
+const { z } = require('zod')
 
 const crearPrestamoSchema = z.object({
-
     body: z.object({
 
+        // Varios equipos
         num_series: z.array(
             z.string()
                 .min(1)
                 .max(50)
         ).min(1, 'Debe seleccionar al menos un equipo'),
 
-        usuario_destino: z.string({ required_error: 'El usuario destino es requerido' })
-            .min(1)
-            .max(50),
+        // Empleado seleccionado
+        id_empleado: z.string()
+            .uuid('El id del empleado debe ser un UUID válido')
+            .optional()
+            .nullable(),
 
-        area: z.string()
-            .max(100)
+        // Usuario del sistema seleccionado
+        id_usuario: z.number()
+            .int()
+            .positive()
             .optional()
             .nullable(),
 
@@ -39,36 +43,41 @@ const crearPrestamoSchema = z.object({
             )
             .optional()
             .nullable()
-    })
-
-});
+    }).refine(
+        data => data.id_empleado || data.id_usuario,
+        {
+            message: 'Debe seleccionar un empleado o un usuario',
+            path: ['id_empleado']
+        }
+    )
+})
 
 const devolverPrestamoSchema = z.object({
 
     params: z.object({
 
-        id: z.string({ required_error: 'El id del préstamo es requerido' })
+        id: z.string()
             .min(1)
             .max(50)
 
     })
 
-});
+})
 
 const historialEquipoSchema = z.object({
 
     params: z.object({
 
-        num_serie: z.string({ required_error: 'El número de serie es requerido' })
+        num_serie: z.string()
             .min(1)
             .max(50)
 
     })
 
-});
+})
 
 module.exports = {
     crearPrestamoSchema,
     devolverPrestamoSchema,
     historialEquipoSchema
-};
+}

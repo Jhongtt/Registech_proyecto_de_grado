@@ -9,46 +9,145 @@ exports.findPrestamos = async () => {
 
     const prestamos = await prisma.prestamos.findMany({
         include: {
+            empleado: true,
+            usuario: true,
+
             equipos: {
                 include: {
                     equipo: true
                 }
             }
         },
+
         orderBy: {
             fecha_prestamo: 'desc'
         }
     })
 
-    return prestamos.flatMap(prestamo =>
-        prestamo.equipos.map(relacion => ({
-            id_prestamo: prestamo.id_prestamo,
+    return prestamos.map(prestamo => ({
+
+        id_prestamo: prestamo.id_prestamo,
+
+        // ==================================================
+        // DESTINATARIO - EMPLEADO
+        // ==================================================
+
+        id_empleado: prestamo.id_empleado,
+
+        empleado:
+            prestamo.empleado?.nombre ||
+            null,
+
+        documento_empleado:
+            prestamo.empleado?.documento ||
+            null,
+
+        correo_empleado:
+            prestamo.empleado?.correo ||
+            null,
+
+
+        // ==================================================
+        // DESTINATARIO - USUARIO DEL SISTEMA
+        // ==================================================
+
+        id_usuario: prestamo.id_usuario,
+
+        usuario:
+            prestamo.usuario?.nombre ||
+            null,
+
+        correo_usuario:
+            prestamo.usuario?.correo ||
+            null,
+
+
+        // ==================================================
+        // DESTINATARIO GENERAL
+        // ==================================================
+
+        destinatario:
+            prestamo.empleado?.nombre ||
+            prestamo.usuario?.nombre ||
+            null,
+
+
+        // ==================================================
+        // ÁREA
+        // ==================================================
+
+        area:
+            prestamo.area ||
+            prestamo.empleado?.area ||
+            prestamo.usuario?.area ||
+            null,
+
+
+        estado: prestamo.estado,
+
+        fecha_prestamo: prestamo.fecha_prestamo,
+
+        fecha_devolucion:
+            prestamo.fecha_devolucion,
+
+        observaciones:
+            prestamo.observaciones,
+
+        evidencia:
+            prestamo.evidencia,
+
+
+        // ==================================================
+        // EQUIPOS DEL PRÉSTAMO
+        // ==================================================
+
+        equipos: prestamo.equipos.map(relacion => ({
+
             num_serie: relacion.num_serie,
 
-            estado: prestamo.estado,
+            estado: relacion.estado,
 
-            usuario_destino: prestamo.usuario_destino,
-            area: prestamo.area,
+            equipo:
+                relacion.equipo?.equipo ||
+                null,
 
-            fecha_prestamo: prestamo.fecha_prestamo,
-            fecha_devolucion: prestamo.fecha_devolucion,
+            equipo_area:
+                relacion.equipo?.area ||
+                null,
 
-            observaciones: prestamo.observaciones,
-            evidencia: prestamo.evidencia,
+            descripcion:
+                relacion.equipo?.descripcion ||
+                null,
 
-            equipo: relacion.equipo?.equipo || null,
-            equipo_area: relacion.equipo?.area || null,
-            descripcion: relacion.equipo?.descripcion || null,
+            estado_equipo:
+                relacion.equipo?.estado ||
+                null,
 
-            estado_equipo: relacion.equipo?.estado || null,
-            responsable: relacion.equipo?.responsable || null,
-            fecha_adquisicion: relacion.equipo?.fecha_adquisicion || null,
-            fecha_asignacion: relacion.equipo?.fecha_asignacion || null,
-            fecha_baja: relacion.equipo?.fecha_baja || null,
-            sistema_operativo: relacion.equipo?.sistema_operativo || null,
-            imagen: relacion.equipo?.imagen || null
+            responsable:
+                relacion.equipo?.responsable ||
+                null,
+
+            fecha_adquisicion:
+                relacion.equipo?.fecha_adquisicion ||
+                null,
+
+            fecha_asignacion:
+                relacion.equipo?.fecha_asignacion ||
+                null,
+
+            fecha_baja:
+                relacion.equipo?.fecha_baja ||
+                null,
+
+            sistema_operativo:
+                relacion.equipo?.sistema_operativo ||
+                null,
+
+            imagen:
+                relacion.equipo?.imagen ||
+                null
         }))
-    )
+    }))
 }
 
 
@@ -59,55 +158,179 @@ exports.findPrestamos = async () => {
 exports.findPrestamosActivos = async () => {
 
     const prestamos = await prisma.prestamos.findMany({
+
         where: {
             estado: {
                 in: ['activo', 'parcial']
             }
         },
+
         include: {
+
+            empleado: true,
+
+            usuario: true,
+
             equipos: {
+
+                where: {
+                    estado: 'prestado'
+                },
+
                 include: {
                     equipo: true
                 }
             }
         },
+
         orderBy: {
             fecha_prestamo: 'desc'
         }
     })
 
-    return prestamos.flatMap(prestamo =>
-        prestamo.equipos.map(relacion => ({
-            id_prestamo: prestamo.id_prestamo,
 
-            // IMPORTANTE: este es el número de serie real
-            num_serie: relacion.num_serie,
+    return prestamos
 
-            estado: prestamo.estado,
+        .filter(prestamo =>
+            prestamo.equipos.length > 0
+        )
 
-            usuario_destino: prestamo.usuario_destino,
-            area: prestamo.area,
+        .map(prestamo => ({
 
-            fecha_prestamo: prestamo.fecha_prestamo,
-            fecha_devolucion: prestamo.fecha_devolucion,
+            id_prestamo:
+                prestamo.id_prestamo,
 
-            observaciones: prestamo.observaciones,
-            evidencia: prestamo.evidencia,
 
-            // Información del equipo
-            equipo: relacion.equipo?.equipo || null,
-            equipo_area: relacion.equipo?.area || null,
-            descripcion: relacion.equipo?.descripcion || null,
+            // ==================================================
+            // EMPLEADO
+            // ==================================================
 
-            estado_equipo: relacion.equipo?.estado || null,
-            responsable: relacion.equipo?.responsable || null,
-            fecha_adquisicion: relacion.equipo?.fecha_adquisicion || null,
-            fecha_asignacion: relacion.equipo?.fecha_asignacion || null,
-            fecha_baja: relacion.equipo?.fecha_baja || null,
-            sistema_operativo: relacion.equipo?.sistema_operativo || null,
-            imagen: relacion.equipo?.imagen || null
+            id_empleado:
+                prestamo.id_empleado,
+
+            empleado:
+                prestamo.empleado?.nombre ||
+                null,
+
+            documento_empleado:
+                prestamo.empleado?.documento ||
+                null,
+
+            correo_empleado:
+                prestamo.empleado?.correo ||
+                null,
+
+
+            // ==================================================
+            // USUARIO
+            // ==================================================
+
+            id_usuario:
+                prestamo.id_usuario,
+
+            usuario:
+                prestamo.usuario?.nombre ||
+                null,
+
+            correo_usuario:
+                prestamo.usuario?.correo ||
+                null,
+
+
+            // ==================================================
+            // DESTINATARIO GENERAL
+            // ==================================================
+
+            destinatario:
+                prestamo.empleado?.nombre ||
+                prestamo.usuario?.nombre ||
+                null,
+
+
+            // ==================================================
+            // ÁREA
+            // ==================================================
+
+            area:
+                prestamo.area ||
+                prestamo.empleado?.area ||
+                prestamo.usuario?.area ||
+                null,
+
+
+            estado:
+                prestamo.estado,
+
+
+            fecha_prestamo:
+                prestamo.fecha_prestamo,
+
+
+            fecha_devolucion:
+                prestamo.fecha_devolucion,
+
+
+            observaciones:
+                prestamo.observaciones,
+
+
+            evidencia:
+                prestamo.evidencia,
+
+
+            // ==================================================
+            // EQUIPOS
+            // ==================================================
+
+            equipos: prestamo.equipos.map(relacion => ({
+
+                num_serie:
+                    relacion.num_serie,
+
+                estado:
+                    relacion.estado,
+
+                equipo:
+                    relacion.equipo?.equipo ||
+                    null,
+
+                equipo_area:
+                    relacion.equipo?.area ||
+                    null,
+
+                descripcion:
+                    relacion.equipo?.descripcion ||
+                    null,
+
+                estado_equipo:
+                    relacion.equipo?.estado ||
+                    null,
+
+                responsable:
+                    relacion.equipo?.responsable ||
+                    null,
+
+                fecha_adquisicion:
+                    relacion.equipo?.fecha_adquisicion ||
+                    null,
+
+                fecha_asignacion:
+                    relacion.equipo?.fecha_asignacion ||
+                    null,
+
+                fecha_baja:
+                    relacion.equipo?.fecha_baja ||
+                    null,
+
+                sistema_operativo:
+                    relacion.equipo?.sistema_operativo ||
+                    null,
+
+                imagen:
+                    relacion.equipo?.imagen ||
+                    null
+            }))
         }))
-    )
 }
 
 
@@ -115,58 +338,199 @@ exports.findPrestamosActivos = async () => {
 // BUSCAR PRÉSTAMO ACTIVO POR EQUIPO
 // ======================================================
 
-exports.findPrestamoActivoPorEquipo = async (numSerieLimpio) => {
+exports.findPrestamoActivoPorEquipo = async (
+    numSerieLimpio
+) => {
 
-    const relacion = await prisma.prestamo_equipos.findFirst({
-        where: {
-            num_serie: numSerieLimpio,
-            prestamo: {
-                estado: {
-                    in: ['activo', 'parcial']
+    const relacion =
+        await prisma.prestamo_equipos.findFirst({
+
+            where: {
+
+                num_serie:
+                    numSerieLimpio,
+
+                estado:
+                    'prestado',
+
+                prestamo: {
+
+                    estado: {
+                        in: [
+                            'activo',
+                            'parcial'
+                        ]
+                    }
+                }
+            },
+
+
+            include: {
+
+                prestamo: {
+
+                    include: {
+
+                        empleado: true,
+
+                        usuario: true
+                    }
+                },
+
+                equipo: true
+            },
+
+
+            orderBy: {
+
+                prestamo: {
+
+                    fecha_prestamo:
+                        'desc'
                 }
             }
-        },
-        include: {
-            prestamo: true,
-            equipo: true
-        },
-        orderBy: {
-            prestamo: {
-                fecha_prestamo: 'desc'
-            }
-        }
-    })
+        })
+
 
     if (!relacion) {
         return null
     }
 
+
+    const prestamo =
+        relacion.prestamo
+
+
     return {
-        id_prestamo: relacion.prestamo.id_prestamo,
-        num_serie: relacion.num_serie,
 
-        estado: relacion.prestamo.estado,
+        id_prestamo:
+            prestamo.id_prestamo,
 
-        usuario_destino: relacion.prestamo.usuario_destino,
-        area: relacion.prestamo.area,
 
-        fecha_prestamo: relacion.prestamo.fecha_prestamo,
-        fecha_devolucion: relacion.prestamo.fecha_devolucion,
+        num_serie:
+            relacion.num_serie,
 
-        observaciones: relacion.prestamo.observaciones,
-        evidencia: relacion.prestamo.evidencia,
 
-        equipo: relacion.equipo?.equipo || null,
-        descripcion: relacion.equipo?.descripcion || null,
-        equipo_area: relacion.equipo?.area || null,
+        estado:
+            prestamo.estado,
 
-        estado_equipo: relacion.equipo?.estado || null,
-        responsable: relacion.equipo?.responsable || null,
-        fecha_adquisicion: relacion.equipo?.fecha_adquisicion || null,
-        fecha_asignacion: relacion.equipo?.fecha_asignacion || null,
-        fecha_baja: relacion.equipo?.fecha_baja || null,
-        sistema_operativo: relacion.equipo?.sistema_operativo || null,
-        imagen: relacion.equipo?.imagen || null
+
+        // ==================================================
+        // EMPLEADO
+        // ==================================================
+
+        id_empleado:
+            prestamo.id_empleado,
+
+        empleado:
+            prestamo.empleado?.nombre ||
+            null,
+
+        documento_empleado:
+            prestamo.empleado?.documento ||
+            null,
+
+        correo_empleado:
+            prestamo.empleado?.correo ||
+            null,
+
+
+        // ==================================================
+        // USUARIO
+        // ==================================================
+
+        id_usuario:
+            prestamo.id_usuario,
+
+        usuario:
+            prestamo.usuario?.nombre ||
+            null,
+
+        correo_usuario:
+            prestamo.usuario?.correo ||
+            null,
+
+
+        // ==================================================
+        // DESTINATARIO
+        // ==================================================
+
+        destinatario:
+            prestamo.empleado?.nombre ||
+            prestamo.usuario?.nombre ||
+            null,
+
+
+        // ==================================================
+        // ÁREA
+        // ==================================================
+
+        area:
+            prestamo.area ||
+            prestamo.empleado?.area ||
+            prestamo.usuario?.area ||
+            null,
+
+
+        fecha_prestamo:
+            prestamo.fecha_prestamo,
+
+
+        fecha_devolucion:
+            prestamo.fecha_devolucion,
+
+
+        observaciones:
+            prestamo.observaciones,
+
+
+        evidencia:
+            prestamo.evidencia,
+
+
+        // ==================================================
+        // EQUIPO
+        // ==================================================
+
+        equipo:
+            relacion.equipo?.equipo ||
+            null,
+
+        descripcion:
+            relacion.equipo?.descripcion ||
+            null,
+
+        equipo_area:
+            relacion.equipo?.area ||
+            null,
+
+        estado_equipo:
+            relacion.equipo?.estado ||
+            null,
+
+        responsable:
+            relacion.equipo?.responsable ||
+            null,
+
+        fecha_adquisicion:
+            relacion.equipo?.fecha_adquisicion ||
+            null,
+
+        fecha_asignacion:
+            relacion.equipo?.fecha_asignacion ||
+            null,
+
+        fecha_baja:
+            relacion.equipo?.fecha_baja ||
+            null,
+
+        sistema_operativo:
+            relacion.equipo?.sistema_operativo ||
+            null,
+
+        imagen:
+            relacion.equipo?.imagen ||
+            null
     }
 }
 
@@ -177,88 +541,248 @@ exports.findPrestamoActivoPorEquipo = async (numSerieLimpio) => {
 
 exports.crearPrestamoTransaction = async (
     numSeriesLimpios,
-    usuarioLimpio,
+    idEmpleado = null,
+    idUsuario = null,
     observacionesLimpias,
     fechaInicio = null,
-    fechaLimite = null,
-    area = null
+    fechaLimite = null
 ) => {
 
-    if (!Array.isArray(numSeriesLimpios) || numSeriesLimpios.length === 0) {
-        throw new Error('REQUERIDOS')
+    if (
+        !Array.isArray(numSeriesLimpios) ||
+        numSeriesLimpios.length === 0
+    ) {
+        throw new Error('EQUIPOS_REQUERIDOS')
     }
+
+
+    if (!idEmpleado && !idUsuario) {
+        throw new Error('DESTINATARIO_REQUERIDO')
+    }
+
+
+    if (idEmpleado && idUsuario) {
+        throw new Error('DESTINATARIO_INVALIDO')
+    }
+
 
     return await prisma.$transaction(async (tx) => {
 
-        // 1. Buscar todos los equipos
+        // ==================================================
+        // 1. BUSCAR DESTINATARIO
+        // ==================================================
 
-        const equipos = await tx.equipos.findMany({
-            where: {
-                num_serie: {
-                    in: numSeriesLimpios
-                }
+        let empleado = null
+        let usuario = null
+
+        let nombreDestinatario = null
+        let areaDestinatario = null
+
+
+        // --------------------------------------------------
+        // EMPLEADO
+        // --------------------------------------------------
+
+        if (idEmpleado) {
+
+            empleado =
+                await tx.empleados.findUnique({
+
+                    where: {
+                        id_empleado:
+                            idEmpleado
+                    }
+                })
+
+
+            if (!empleado) {
+                throw new Error(
+                    'EMPLEADO_NO_ENCONTRADO'
+                )
             }
-        })
 
-        // 2. Verificar que todos existan
 
-        if (equipos.length !== numSeriesLimpios.length) {
-            throw new Error('EQUIPO_NO_ENCONTRADO')
+            nombreDestinatario =
+                empleado.nombre
+
+            areaDestinatario =
+                empleado.area
         }
 
-        // 3. Verificar disponibilidad
 
-        const equipoNoDisponible = equipos.find(
-            equipo => equipo.estado !== 'Disponible'
-        )
+        // --------------------------------------------------
+        // USUARIO DEL SISTEMA
+        // --------------------------------------------------
+
+        else if (idUsuario) {
+
+            usuario =
+                await tx.usuarios.findUnique({
+
+                    where: {
+                        id_usuario:
+                            Number(idUsuario)
+                    }
+                })
+
+
+            if (!usuario) {
+                throw new Error(
+                    'USUARIO_NO_ENCONTRADO'
+                )
+            }
+
+
+            nombreDestinatario =
+                usuario.nombre
+
+            areaDestinatario =
+                usuario.area
+        }
+
+
+        // ==================================================
+        // 2. BUSCAR EQUIPOS
+        // ==================================================
+
+        const equipos =
+            await tx.equipos.findMany({
+
+                where: {
+
+                    num_serie: {
+                        in: numSeriesLimpios
+                    }
+                }
+            })
+
+
+        // ==================================================
+        // 3. VERIFICAR QUE TODOS EXISTAN
+        // ==================================================
+
+        if (
+            equipos.length !==
+            numSeriesLimpios.length
+        ) {
+
+            throw new Error(
+                'EQUIPO_NO_ENCONTRADO'
+            )
+        }
+
+
+        // ==================================================
+        // 4. VERIFICAR DISPONIBILIDAD
+        // ==================================================
+
+        const equipoNoDisponible =
+            equipos.find(
+                equipo =>
+                    equipo.estado !==
+                    'Disponible'
+            )
+
 
         if (equipoNoDisponible) {
-            throw new Error('EQUIPO_NO_DISPONIBLE')
+
+            throw new Error(
+                'EQUIPO_NO_DISPONIBLE'
+            )
         }
 
-        // 4. Crear préstamo
 
-        const prestamo = await tx.prestamos.create({
-            data: {
-                usuario_destino: usuarioLimpio,
-                area: area,
+        // ==================================================
+        // 5. CREAR PRÉSTAMO
+        // ==================================================
 
-                fecha_prestamo: fechaInicio
-                    ? new Date(fechaInicio)
-                    : new Date(),
+        const prestamo =
+            await tx.prestamos.create({
 
-                fecha_devolucion: fechaLimite
-                    ? new Date(fechaLimite)
-                    : null,
+                data: {
 
-                estado: 'activo',
+                    id_empleado:
+                        empleado?.id_empleado ||
+                        null,
 
-                observaciones: observacionesLimpias
-            }
-        })
+                    id_usuario:
+                        usuario?.id_usuario ||
+                        null,
 
-        // 5. Crear relaciones con los equipos
+                    area:
+                        areaDestinatario,
+
+                    fecha_prestamo:
+                        fechaInicio
+                            ? new Date(fechaInicio)
+                            : new Date(),
+
+                    fecha_devolucion:
+                        fechaLimite
+                            ? new Date(fechaLimite)
+                            : null,
+
+                    estado:
+                        'activo',
+
+                    observaciones:
+                        observacionesLimpias ||
+                        null
+                }
+            })
+
+
+        // ==================================================
+        // 6. RELACIONAR EQUIPOS
+        // ==================================================
 
         await tx.prestamo_equipos.createMany({
-            data: numSeriesLimpios.map(numSerie => ({
-                id_prestamo: prestamo.id_prestamo,
-                num_serie: numSerie
-            }))
+
+            data:
+                numSeriesLimpios.map(
+                    numSerie => ({
+
+                        id_prestamo:
+                            prestamo.id_prestamo,
+
+                        num_serie:
+                            numSerie,
+
+                        estado:
+                            'prestado'
+                    })
+                )
         })
 
-        // 6. Marcar equipos como asignados
+
+        // ==================================================
+        // 7. MARCAR EQUIPOS COMO ASIGNADOS
+        // ==================================================
 
         await tx.equipos.updateMany({
+
             where: {
+
                 num_serie: {
                     in: numSeriesLimpios
                 }
             },
+
             data: {
-                estado: 'Asignado',
-                responsable: usuarioLimpio
+
+                estado:
+                    'Asignado',
+
+                responsable:
+                    nombreDestinatario,
+
+                fecha_asignacion:
+                    fechaInicio
+                        ? new Date(fechaInicio)
+                        : new Date()
             }
         })
+
 
         return prestamo
     })
@@ -277,66 +801,149 @@ exports.devolverPrestamoTransaction = async (
 
     return await prisma.$transaction(async (tx) => {
 
-        // 1. Buscar préstamo
+        // ==================================================
+        // 1. BUSCAR PRÉSTAMO
+        // ==================================================
 
-        const prestamo = await tx.prestamos.findUnique({
-            where: {
-                id_prestamo: idLimpio
-            },
-            include: {
-                equipos: true
-            }
-        })
+        const prestamo =
+            await tx.prestamos.findUnique({
+
+                where: {
+                    id_prestamo:
+                        idLimpio
+                },
+
+                include: {
+                    equipos: true
+                }
+            })
+
 
         if (!prestamo) {
-            throw new Error('PRESTAMO_NO_ENCONTRADO')
+            throw new Error(
+                'PRESTAMO_NO_ENCONTRADO'
+            )
         }
 
-        // Permitir activo y parcial
 
-        if (!['activo', 'parcial'].includes(prestamo.estado)) {
-            throw new Error('PRESTAMO_YA_DEVUELTO')
+        if (
+            !['activo', 'parcial']
+                .includes(prestamo.estado)
+        ) {
+
+            throw new Error(
+                'PRESTAMO_YA_DEVUELTO'
+            )
         }
 
-        // 2. Obtener números de serie
 
-        const numSeries = prestamo.equipos.map(
-            equipo => equipo.num_serie
-        )
+        // ==================================================
+        // 2. EQUIPOS QUE SIGUEN PRESTADOS
+        // ==================================================
 
-        // 3. Actualizar préstamo
+        const equiposPrestados =
+            prestamo.equipos.filter(
+                relacion =>
+                    relacion.estado ===
+                    'prestado'
+            )
 
-        await tx.prestamos.update({
-            where: {
-                id_prestamo: idLimpio
-            },
-            data: {
-                fecha_devolucion: new Date(),
-                estado: 'devuelto',
-                observaciones: observaciones ?? prestamo.observaciones,
-                evidencia: evidencia
-            }
-        })
 
-        // 4. Liberar todos los equipos
+        const numSeries =
+            equiposPrestados.map(
+                relacion =>
+                    relacion.num_serie
+            )
+
+
+        // ==================================================
+        // 3. MARCAR RELACIONES COMO DEVUELTAS
+        // ==================================================
 
         if (numSeries.length > 0) {
 
-            await tx.equipos.updateMany({
+            await tx.prestamo_equipos.updateMany({
+
                 where: {
-                    num_serie: {
-                        in: numSeries
-                    }
+
+                    id_prestamo:
+                        idLimpio,
+
+                    estado:
+                        'prestado'
                 },
+
                 data: {
-                    estado: 'Disponible',
-                    responsable: null
+                    estado:
+                        'devuelto'
                 }
             })
         }
 
+
+        // ==================================================
+        // 4. LIBERAR EQUIPOS
+        // ==================================================
+
+        if (numSeries.length > 0) {
+
+            await tx.equipos.updateMany({
+
+                where: {
+
+                    num_serie: {
+                        in: numSeries
+                    }
+                },
+
+                data: {
+
+                    estado:
+                        'Disponible',
+
+                    responsable:
+                        null,
+
+                    fecha_asignacion:
+                        null
+                }
+            })
+        }
+
+
+        // ==================================================
+        // 5. FINALIZAR PRÉSTAMO
+        // ==================================================
+
+        await tx.prestamos.update({
+
+            where: {
+                id_prestamo:
+                    idLimpio
+            },
+
+            data: {
+
+                fecha_devolucion:
+                    new Date(),
+
+                estado:
+                    'devuelto',
+
+                observaciones:
+                    observaciones ??
+                    prestamo.observaciones,
+
+                evidencia:
+                    evidencia ??
+                    prestamo.evidencia
+            }
+        })
+
+
         return {
-            equiposDevueltos: numSeries.length
+            equiposDevueltos:
+                numSeries.length
         }
     })
 }
@@ -355,157 +962,388 @@ exports.devolverEquipoTransaction = async (
 
     return await prisma.$transaction(async (tx) => {
 
-        // 1. Buscar préstamo
-        const prestamo = await tx.prestamos.findUnique({
-            where: {
-                id_prestamo: idPrestamo
-            }
-        })
+        // ==================================================
+        // 1. BUSCAR PRÉSTAMO
+        // ==================================================
 
-        if (!prestamo) {
-            throw new Error('PRESTAMO_NO_ENCONTRADO')
-        }
+        const prestamo =
+            await tx.prestamos.findUnique({
 
-        // Solo se pueden devolver equipos de préstamos activos o parciales
-        if (
-            prestamo.estado !== 'activo' &&
-            prestamo.estado !== 'parcial'
-        ) {
-            throw new Error('PRESTAMO_YA_DEVUELTO')
-        }
-
-        // 2. Verificar que el equipo pertenezca al préstamo
-        const relacion = await tx.prestamo_equipos.findUnique({
-            where: {
-                id_prestamo_num_serie: {
-                    id_prestamo: idPrestamo,
-                    num_serie: numSerie
-                }
-            }
-        })
-
-        if (!relacion) {
-            throw new Error('EQUIPO_NO_PERTENECE')
-        }
-
-        // 3. Liberar equipo
-        await tx.equipos.update({
-            where: {
-                num_serie: numSerie
-            },
-            data: {
-                estado: 'Disponible',
-                responsable: null
-            }
-        })
-
-        // 4. Eliminar relación del equipo con el préstamo
-        await tx.prestamo_equipos.delete({
-            where: {
-                id_prestamo_num_serie: {
-                    id_prestamo: idPrestamo,
-                    num_serie: numSerie
-                }
-            }
-        })
-
-        // 5. Contar equipos que todavía pertenecen al préstamo
-        const equiposRestantes = await tx.prestamo_equipos.count({
-            where: {
-                id_prestamo: idPrestamo
-            }
-        })
-
-        let prestamoFinalizado = false
-
-        // 6. Si ya no quedan equipos
-        if (equiposRestantes === 0) {
-
-            await tx.prestamos.update({
                 where: {
-                    id_prestamo: idPrestamo
-                },
-                data: {
-                    estado: 'devuelto',
-                    fecha_devolucion: new Date(),
-                    observaciones: observaciones ?? prestamo.observaciones,
-                    evidencia: evidencia ?? prestamo.evidencia
+                    id_prestamo:
+                        idPrestamo
                 }
             })
 
-            prestamoFinalizado = true
+
+        if (!prestamo) {
+            throw new Error(
+                'PRESTAMO_NO_ENCONTRADO'
+            )
+        }
+
+
+        if (
+            !['activo', 'parcial']
+                .includes(prestamo.estado)
+        ) {
+
+            throw new Error(
+                'PRESTAMO_YA_DEVUELTO'
+            )
+        }
+
+
+        // ==================================================
+        // 2. BUSCAR RELACIÓN
+        // ==================================================
+
+        const relacion =
+            await tx.prestamo_equipos.findUnique({
+
+                where: {
+
+                    id_prestamo_num_serie: {
+
+                        id_prestamo:
+                            idPrestamo,
+
+                        num_serie:
+                            numSerie
+                    }
+                }
+            })
+
+
+        if (!relacion) {
+            throw new Error(
+                'EQUIPO_NO_PERTENECE'
+            )
+        }
+
+
+        if (relacion.estado === 'devuelto') {
+
+            throw new Error(
+                'EQUIPO_YA_DEVUELTO'
+            )
+        }
+
+
+        // ==================================================
+        // 3. MARCAR EQUIPO COMO DEVUELTO
+        // ==================================================
+
+        await tx.prestamo_equipos.update({
+
+            where: {
+
+                id_prestamo_num_serie: {
+
+                    id_prestamo:
+                        idPrestamo,
+
+                    num_serie:
+                        numSerie
+                }
+            },
+
+            data: {
+
+                estado:
+                    'devuelto'
+            }
+        })
+
+
+        // ==================================================
+        // 4. LIBERAR EQUIPO
+        // ==================================================
+
+        await tx.equipos.update({
+
+            where: {
+                num_serie:
+                    numSerie
+            },
+
+            data: {
+
+                estado:
+                    'Disponible',
+
+                responsable:
+                    null,
+
+                fecha_asignacion:
+                    null
+            }
+        })
+
+
+        // ==================================================
+        // 5. CONTAR EQUIPOS PENDIENTES
+        // ==================================================
+
+        const equiposPendientes =
+            await tx.prestamo_equipos.count({
+
+                where: {
+
+                    id_prestamo:
+                        idPrestamo,
+
+                    estado:
+                        'prestado'
+                }
+            })
+
+
+        // ==================================================
+        // 6. ACTUALIZAR ESTADO DEL PRÉSTAMO
+        // ==================================================
+
+        if (equiposPendientes === 0) {
+
+            await tx.prestamos.update({
+
+                where: {
+                    id_prestamo:
+                        idPrestamo
+                },
+
+                data: {
+
+                    estado:
+                        'devuelto',
+
+                    fecha_devolucion:
+                        new Date(),
+
+                    observaciones:
+                        observaciones ??
+                        prestamo.observaciones,
+
+                    evidencia:
+                        evidencia ??
+                        prestamo.evidencia
+                }
+            })
 
         } else {
 
-            // 7. Todavía quedan equipos:
-            // el préstamo pasa a estado PARCIAL
             await tx.prestamos.update({
+
                 where: {
-                    id_prestamo: idPrestamo
+                    id_prestamo:
+                        idPrestamo
                 },
+
                 data: {
-                    estado: 'parcial',
-                    observaciones: observaciones ?? prestamo.observaciones,
-                    evidencia: evidencia ?? prestamo.evidencia
+
+                    estado:
+                        'parcial',
+
+                    observaciones:
+                        observaciones ??
+                        prestamo.observaciones,
+
+                    evidencia:
+                        evidencia ??
+                        prestamo.evidencia
                 }
             })
         }
 
-        // 8. Devolver información al controller
+
         return {
-            equiposRestantes,
-            prestamoFinalizado
+
+            equiposRestantes:
+                equiposPendientes,
+
+            prestamoFinalizado:
+                equiposPendientes === 0
         }
     })
 }
+
 
 // ======================================================
 // HISTORIAL DE UN EQUIPO
 // ======================================================
 
-exports.findHistorialEquipo = async (numSerieLimpio) => {
+exports.findHistorialEquipo = async (
+    numSerieLimpio
+) => {
 
-    const relaciones = await prisma.prestamo_equipos.findMany({
-        where: {
-            num_serie: numSerieLimpio
-        },
-        include: {
-            prestamo: true,
-            equipo: true
-        },
-        orderBy: {
-            prestamo: {
-                fecha_prestamo: 'desc'
+    const relaciones =
+        await prisma.prestamo_equipos.findMany({
+
+            where: {
+                num_serie:
+                    numSerieLimpio
+            },
+
+            include: {
+
+                prestamo: {
+
+                    include: {
+
+                        empleado: true,
+
+                        usuario: true
+                    }
+                },
+
+                equipo: true
+            },
+
+            orderBy: {
+
+                prestamo: {
+
+                    fecha_prestamo:
+                        'desc'
+                }
             }
-        }
-    })
+        })
+
 
     return relaciones.map(relacion => ({
-        id_prestamo: relacion.prestamo.id_prestamo,
-        num_serie: relacion.num_serie,
 
-        estado: relacion.prestamo.estado,
+        id_prestamo:
+            relacion.prestamo.id_prestamo,
 
-        usuario_destino: relacion.prestamo.usuario_destino,
-        area: relacion.prestamo.area,
 
-        fecha_prestamo: relacion.prestamo.fecha_prestamo,
-        fecha_devolucion: relacion.prestamo.fecha_devolucion,
+        num_serie:
+            relacion.num_serie,
 
-        observaciones: relacion.prestamo.observaciones,
-        evidencia: relacion.prestamo.evidencia,
 
-        equipo: relacion.equipo?.equipo || null,
-        descripcion: relacion.equipo?.descripcion || null,
-        equipo_area: relacion.equipo?.area || null,
+        estado:
+            relacion.prestamo.estado,
 
-        estado_equipo: relacion.equipo?.estado || null,
-        responsable: relacion.equipo?.responsable || null,
-        fecha_adquisicion: relacion.equipo?.fecha_adquisicion || null,
-        fecha_asignacion: relacion.equipo?.fecha_asignacion || null,
-        fecha_baja: relacion.equipo?.fecha_baja || null,
-        sistema_operativo: relacion.equipo?.sistema_operativo || null,
-        imagen: relacion.equipo?.imagen || null
+
+        estado_equipo_prestamo:
+            relacion.estado,
+
+
+        // ==================================================
+        // EMPLEADO
+        // ==================================================
+
+        id_empleado:
+            relacion.prestamo.id_empleado,
+
+        empleado:
+            relacion.prestamo.empleado?.nombre ||
+            null,
+
+        documento_empleado:
+            relacion.prestamo.empleado?.documento ||
+            null,
+
+        correo_empleado:
+            relacion.prestamo.empleado?.correo ||
+            null,
+
+
+        // ==================================================
+        // USUARIO
+        // ==================================================
+
+        id_usuario:
+            relacion.prestamo.id_usuario,
+
+        usuario:
+            relacion.prestamo.usuario?.nombre ||
+            null,
+
+        correo_usuario:
+            relacion.prestamo.usuario?.correo ||
+            null,
+
+
+        // ==================================================
+        // DESTINATARIO
+        // ==================================================
+
+        destinatario:
+            relacion.prestamo.empleado?.nombre ||
+            relacion.prestamo.usuario?.nombre ||
+            null,
+
+
+        // ==================================================
+        // ÁREA
+        // ==================================================
+
+        area:
+            relacion.prestamo.area ||
+            relacion.prestamo.empleado?.area ||
+            relacion.prestamo.usuario?.area ||
+            null,
+
+
+        fecha_prestamo:
+            relacion.prestamo.fecha_prestamo,
+
+
+        fecha_devolucion:
+            relacion.prestamo.fecha_devolucion,
+
+
+        observaciones:
+            relacion.prestamo.observaciones,
+
+
+        evidencia:
+            relacion.prestamo.evidencia,
+
+
+        // ==================================================
+        // EQUIPO
+        // ==================================================
+
+        equipo:
+            relacion.equipo?.equipo ||
+            null,
+
+        descripcion:
+            relacion.equipo?.descripcion ||
+            null,
+
+        equipo_area:
+            relacion.equipo?.area ||
+            null,
+
+        estado_equipo:
+            relacion.equipo?.estado ||
+            null,
+
+        responsable:
+            relacion.equipo?.responsable ||
+            null,
+
+        fecha_adquisicion:
+            relacion.equipo?.fecha_adquisicion ||
+            null,
+
+        fecha_asignacion:
+            relacion.equipo?.fecha_asignacion ||
+            null,
+
+        fecha_baja:
+            relacion.equipo?.fecha_baja ||
+            null,
+
+        sistema_operativo:
+            relacion.equipo?.sistema_operativo ||
+            null,
+
+        imagen:
+            relacion.equipo?.imagen ||
+            null
     }))
 }
 
@@ -528,103 +1366,44 @@ exports.getEstadisticasData = async () => {
 
         prisma.equipos.count({
             where: {
-                estado: 'Disponible'
+                estado:
+                    'Disponible'
             }
         }),
 
-        // Contar préstamos activos y parciales
-
-        prisma.prestamos.count({
+        prisma.prestamo_equipos.count({
             where: {
-                estado: {
-                    in: ['activo', 'parcial']
-                }
-            }
-        }),
-
-        prisma.equipos.count({
-            where: {
-                estado: 'En mantenimiento'
+                estado:
+                    'prestado'
             }
         }),
 
         prisma.equipos.count({
             where: {
-                estado: 'Baja'
+                estado:
+                    'En mantenimiento'
+            }
+        }),
+
+        prisma.equipos.count({
+            where: {
+                estado:
+                    'Baja'
             }
         })
     ])
 
+
     return {
+
         total,
+
         disponibles,
+
         prestados,
+
         mantenimiento,
+
         baja
     }
 }
-
-// Registra la devolución parcial de un equipo específico dentro de un préstamo
-exports.devolverEquipoParcialTransaction = async (id_prestamo, num_serie, observaciones) => {
-    const client = await db.pool.connect()
-
-    try {
-        await client.query('BEGIN')
-
-        // 1. Verificar si existe la relación en la tabla intermedia
-        const { rows: peRows } = await client.query(
-            `SELECT * FROM prestamo_equipos WHERE id_prestamo = $1 AND num_serie = $2`,
-            [id_prestamo, num_serie]
-        )
-
-        const prestamoEquipo = peRows[0]
-
-        if (!prestamoEquipo) {
-            throw new Error('EQUIPO_NO_ENCONTRADO_EN_PRESTAMO')
-        }
-
-        if (prestamoEquipo.estado === 'devuelto') {
-            throw new Error('EQUIPO_YA_DEVUELTO')
-        }
-
-        // 2. Actualizar el estado del equipo en la tabla intermedia a 'devuelto'
-        await client.query(
-            `UPDATE prestamo_equipos SET estado = 'devuelto' WHERE id_prestamo = $1 AND num_serie = $2`,
-            [id_prestamo, num_serie]
-        )
-
-        // 3. Cambiar el estado del equipo general en la tabla 'equipos' a 'Disponible' y limpiar responsable
-        await client.query(
-            `UPDATE equipos SET estado = 'Disponible', responsable = NULL WHERE num_serie = $1`,
-            [num_serie]
-        )
-
-        // 4. Verificar cuántos equipos siguen pendientes (estado 'prestado' o distinto de 'devuelto') en este préstamo
-        const { rows: countRows } = await client.query(
-            `SELECT COUNT(*)::int as pendientes FROM prestamo_equipos WHERE id_prestamo = $1 AND estado != 'devuelto'`,
-            [id_prestamo]
-        )
-
-        const equiposPendientes = countRows[0].pendientes
-
-        // 5. Si ya no quedan equipos pendientes, se finaliza el préstamo; si no, queda como parcial
-        if (equiposPendientes === 0) {
-            await client.query(
-                `UPDATE prestamos SET estado = 'finalizado', fecha_devolucion = CURRENT_DATE, observaciones = COALESCE($2, observaciones) WHERE id_prestamo = $1`,
-                [id_prestamo, observaciones || null]
-            )
-        } else {
-            await client.query(
-                `UPDATE prestamos SET estado = 'parcial' WHERE id_prestamo = $1`,
-                [id_prestamo]
-            )
-        }
-
-        await client.query('COMMIT')
-    } catch (e) {
-        await client.query('ROLLBACK')
-        throw e
-    } finally {
-        client.release()
-    }
-};
