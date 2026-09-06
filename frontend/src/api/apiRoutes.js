@@ -117,5 +117,5 @@
     NOTIFICACIONES: `${BASE_URL}/notificaciones`,
     NOTIFICACIONES_NO_LEIDAS: `${BASE_URL}/notificaciones/no-leidas`,
     MARCAR_NOTIFICACION_LEIDA: (id) => `${BASE_URL}/notificaciones/${id}/leida`,
-    MARCAR_NOTIFICACIONES_LEIDAS: `${BASE_URL}/notificaciones/leidas/todas`,
+    MARCAR_NOTIFICACIONES_LEIDAS: `${BASE_URL}/notificaciones/marcar-todas-leidas`,
     }
