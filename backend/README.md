@@ -31,11 +31,14 @@ A lo largo del proyecto, el backend ha pasado por múltiples refactorizaciones p
 3. **Manejo Centralizado de Errores (AppError):**
    Se eliminaron los repetitivos bloques `try-catch` en los controladores implementando una clase personalizada `AppError` que trabaja en conjunto con un middleware global en Express 5, mejorando drásticamente la legibilidad del código.
 
-4. **Infraestructura de Archivos (Multer):**
-   Se configuró un sistema local de alojamiento de archivos estáticos (`/uploads`) permitiendo adjuntar evidencia fotográfica en devoluciones de préstamos y reportes de mantenimiento.
+4. **Almacenamiento en la Nube (Supabase):**
+   Se migró el sistema de alojamiento local de imágenes a la nube utilizando **Supabase Storage**. Los archivos (como fotos de equipos) se procesan en memoria (`multer.memoryStorage()`) y se suben directamente al bucket público de Supabase, almacenando únicamente la URL en PostgreSQL, lo que facilita el despliegue en servicios sin almacenamiento persistente.
 
 5. **Dockerización:**
    Todo el backend fue empaquetado en contenedores de Docker, garantizando que el sistema funcione idénticamente en cualquier computadora y simplificando el despliegue a producción.
+
+6. **Automatización de Catálogo de Imágenes:**
+   Se implementó un script automatizado (`backend/scripts/migrar_imagenes.js`) capaz de consultar la base de datos y hacer Web Scraping (búsqueda web) para encontrar, descargar y subir automáticamente fotos reales a todo el inventario de equipos basándose en su nombre. Además, se construyó un endpoint `PATCH /equipos/:num_serie/foto` que gestiona (sube, reemplaza o elimina físicamente en Supabase) la imagen de un equipo.
 
 ---
 

@@ -1,4 +1,4 @@
-const express = require('express')
+﻿const express = require('express')
 
 const router = express.Router()
 
@@ -14,7 +14,8 @@ const {
     getHistorialEquipo,
     resolverReporte,
     buscarMantenimientos,
-    aprobarRechazarOrden
+    aprobarRechazarOrden,
+    actualizarFoto
 } = require('../controllers/equiposController')
 
 const { authMiddleware, requireRol } = require('../middlewares/auth')
@@ -105,6 +106,14 @@ router.post(
     authMiddleware,
     validate(buscarMantenimientosSchema),
     buscarMantenimientos
+)
+
+router.patch(
+    '/equipos/:num_serie/foto',
+    authMiddleware,
+    requireRol('admin', 'inventario'),
+    uploadMemoria.single('foto'),
+    actualizarFoto
 )
 
 module.exports = router

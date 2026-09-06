@@ -933,3 +933,10 @@ exports.findHistorialEquipo = async (numSerie) => {
 
     return rows
 }
+
+exports.actualizarFotoEquipo = async (numSerie, urlImagen) => {
+    return await prisma.equipos.update({
+        where: { num_serie: numSerie },
+        data: { imagen: urlImagen }
+    })
+}
