@@ -5,7 +5,7 @@ async function createPMCTable() {
     try {
         await pool.query(`
             CREATE TABLE IF NOT EXISTS productos_menor_cuantia (
-                id SERIAL PRIMARY KEY,
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 nombre VARCHAR(100) NOT NULL,
                 descripcion TEXT,
                 cantidad_total INTEGER DEFAULT 0,

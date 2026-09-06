@@ -33,7 +33,7 @@ exports.obtenerNoLeidas = async (req, res) => {
 exports.marcarLeida = async (req, res) => {
     try {
         await notificacionesService.marcarLeida(
-            req.params.id,
+            parseInt(req.params.id, 10),
             req.usuario.usuario
         )
 
