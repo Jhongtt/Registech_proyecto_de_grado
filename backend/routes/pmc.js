@@ -4,22 +4,22 @@ const router = express.Router();
 
 const pmcController = require('../controllers/pmcController');
 
-const { authMiddleware } = require('../middlewares/auth');
+const { authMiddleware, requireRol } = require('../middlewares/auth');
 
-// Por ahora solo exigimos que esté autenticado
+// Autenticado puede consultar; crear/modificar/gestión de stock solo admin o inventario
 router.use(authMiddleware);
 
 router.get('/', pmcController.obtenerTodos);
 
-router.post('/', pmcController.crearProducto);
+router.post('/', requireRol('admin', 'inventario'), pmcController.crearProducto);
 
-router.put('/:id', pmcController.actualizarProducto);
+router.put('/:id', requireRol('admin', 'inventario'), pmcController.actualizarProducto);
 
-router.delete('/:id', pmcController.eliminarProducto);
+router.delete('/:id', requireRol('admin', 'inventario'), pmcController.eliminarProducto);
 
 // Rutas rápidas de stock
-router.post('/:id/entregar', pmcController.entregarProducto);
+router.post('/:id/entregar', requireRol('admin', 'inventario'), pmcController.entregarProducto);
 
-router.post('/:id/devolver', pmcController.devolverProducto);
+router.post('/:id/devolver', requireRol('admin', 'inventario'), pmcController.devolverProducto);
 
 module.exports = router;

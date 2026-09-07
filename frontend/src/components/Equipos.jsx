@@ -7,8 +7,13 @@ import { toISODate } from "../utils/equipoUtils"
 import EquipoCard from "./equipos/EquipoCard"
 import ModalPrestamo from "./equipos/ModalPrestamo"
 import ModalRegistroEquipo from "./equipos/ModalRegistroEquipo"
+import Paginador from "./ui/Paginador"
+import { useAuth } from "../context/AuthContext"
 
 const Equipos = ({ usuario }) => {
+    const { usuario: usuarioAuth } = useAuth()
+    const esAdmin = usuarioAuth?.rol === 'admin'
+    const esInventario = usuarioAuth?.rol === 'inventario'
     const [equipos, setEquipos] = useState([])
     const [usuarios, setUsuarios] = useState([])
     const [areas, setAreas] = useState([])
@@ -22,6 +27,7 @@ const Equipos = ({ usuario }) => {
 
     const [filter, setFilter] = useState('')
     const [filtroEstado, setFiltroEstado] = useState('')
+    const [page, setPage] = useState(1)
     const location = useLocation()
 
     const cargarDatos = useCallback(() => {
@@ -69,6 +75,11 @@ const Equipos = ({ usuario }) => {
         const matchEstado = !filtroEstado || equipo.estado === filtroEstado
         return matchTexto && matchEstado
     })
+
+    const ROWS = 6
+    const totalPages = Math.max(1, Math.ceil(filteredEquipos.length / ROWS))
+    const paginaActual = Math.min(page, totalPages)
+    const equiposPagina = filteredEquipos.slice((paginaActual - 1) * ROWS, paginaActual * ROWS)
 
     const getVencimiento = (numSerie) => {
         const prestamo = prestamosActivos.find(p => p.num_serie === numSerie)
@@ -141,6 +152,10 @@ const Equipos = ({ usuario }) => {
         setEquipos(prev => [nuevoEquipo, ...prev])
     }
 
+    const handleEquipoActualizado = (equipo) => {
+        setEquipos(prev => prev.map(e => e.num_serie === equipo.num_serie ? equipo : e))
+    }
+
     return (
         <div className="card">
             <div className="card-body">
@@ -148,9 +163,11 @@ const Equipos = ({ usuario }) => {
                     <h4 className="module-title mb-0">Inventario de Equipos</h4>
                     <div className="d-flex gap-2 align-items-center">
                         <span className="badge text-bg-primary">{equipos.length} registros</span>
-                        <button className="btn btn-sm btn-success rounded-pill" onClick={() => setModalRegistro(true)}>
-                            <i className="bi bi-plus-lg me-1"></i>Agregar Equipo
-                        </button>
+                        {(esAdmin || esInventario) && (
+                            <button className="btn btn-sm btn-success rounded-pill" onClick={() => setModalRegistro(true)}>
+                                <i className="bi bi-plus-lg me-1"></i>Agregar Equipo
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -171,6 +188,8 @@ const Equipos = ({ usuario }) => {
                                 <option value="Disponible">Disponible</option>
                                 <option value="Asignado">En Préstamo</option>
                                 <option value="En mantenimiento">En mantenimiento</option>
+                                <option value="En reparación">En reparación</option>
+                                <option value="Inactivo">Inactivo</option>
                                 <option value="Baja">Baja</option>
                             </select>
                         </div>
@@ -183,18 +202,22 @@ const Equipos = ({ usuario }) => {
                     </div>
                 ) : (
                     <div className="row g-3">
-                        {filteredEquipos.map(equipo => (
+                        {equiposPagina.map(equipo => (
                             <div className="col-xl-4 col-md-6" key={equipo.num_serie}>
                                 <EquipoCard
                                     equipo={equipo}
                                     onPrestamo={abrirModalPrestamo}
                                     onDevolver={devolverEquipo}
                                     vencimiento={getVencimiento(equipo.num_serie)}
+                                    areas={areas}
+                                    onEquipoActualizado={handleEquipoActualizado}
                                 />
                             </div>
                         ))}
                     </div>
                 )}
+
+                <Paginador page={paginaActual} setPage={setPage} totalItems={filteredEquipos.length} size={ROWS} />
 
                 {modalPrestamo && (
                     <ModalPrestamo

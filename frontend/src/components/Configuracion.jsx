@@ -36,7 +36,7 @@ const Configuracion = () => {
             Swal.fire({ icon: 'warning', title: 'Campos incompletos', text: 'Completa la contraseña actual y la nueva' })
             return
         }
-        const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[\]{};':"\\|,.<>\/?]).{8,}$/
+        const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=[\]{};':"\\|,.<>/?]).{8,}$/
         if (!PASSWORD_REGEX.test(contrasenaNueva)) {
             Swal.fire({ icon: 'warning', title: 'Contraseña débil', text: 'Mínimo 8 caracteres, 1 mayúscula, 1 minúscula, 1 número y 1 símbolo (!@#$%^&* etc.)' })
             return
@@ -101,6 +101,7 @@ const Configuracion = () => {
                                 </div>
                             </div>
 
+                            <div className="table-responsive">
                             <table className="table table-sm mb-0">
                                 <tbody>
                                     <tr>
@@ -117,6 +118,7 @@ const Configuracion = () => {
                                     </tr>
                                 </tbody>
                             </table>
+                            </div>
                         </div>
                     </div>
                 </div>

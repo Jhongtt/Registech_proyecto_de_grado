@@ -12,6 +12,8 @@ const STATUS_COLORS = {
     Disponible: '#22c55e',
     Asignado: '#3b82f6',
     'En mantenimiento': '#ef4444',
+    'En reparación': '#f59e0b',
+    'Inactivo': '#94a3b8',
     Baja: '#6b7280',
 }
 
@@ -272,7 +274,7 @@ export default function DashboardAdmin() {
                                     <li key={i} className="activity-item">
                                         <span className="activity-dot" style={{background: getActivityColor(a.accion)}}></span>
                                         <div>
-                                            <div className="activity-text" title={`${a.usuario} ${a.accion}`}><strong>{a.usuario}</strong> {a.accion}</div>
+                                            <div className="activity-text" title={`${a.nombre_usuario || a.usuario} ${a.accion}`}><strong>{a.nombre_usuario || a.usuario}</strong> {a.accion}</div>
                                             <div className="activity-time">{timeAgo(a.fecha)}</div>
                                         </div>
                                     </li>
@@ -325,7 +327,7 @@ export default function DashboardAdmin() {
                                         </td>
                                         <td><strong>{o.equipo || o.num_serie}</strong><br /><small className="text-muted">{o.num_serie}</small></td>
                                         <td style={{ maxWidth: '260px' }}>{o.falla}</td>
-                                        <td>{o.usuario_tecnico || '-'}</td>
+                                        <td>{o.nombre_tecnico || o.usuario_tecnico || '-'}</td>
                                         <td className="text-end">
                                             <button
                                                 className="btn btn-sm btn-primary"
@@ -347,7 +349,7 @@ export default function DashboardAdmin() {
                 <div className={rol === 'admin' ? 'col-lg-7' : 'col-lg-12'}>
                     <div className="table-card">
                         <div className="table-card__header">
-                            <h5 className="chart-card__title mb-0">Prestamos Recientes</h5>
+                            <h5 className="chart-card__title mb-0">Préstamos Recientes</h5>
                         </div>
                         {paginatedLoans.length === 0 ? (
                             <div className="empty-state"><i className="bi bi-inbox"></i><h5>Sin prestamos aun</h5></div>

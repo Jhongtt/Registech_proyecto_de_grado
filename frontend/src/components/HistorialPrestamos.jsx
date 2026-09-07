@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react"
 import axios from "axios"
 import { API_ROUTES } from "../api/apiRoutes"
+import Paginador from "./ui/Paginador"
 
 const HistorialPrestamos = () => {
     const [prestamos, setPrestamos] = useState([])
     const [loading, setLoading] = useState(true)
     const [filter, setFilter] = useState("")
     const [filtroEstado, setFiltroEstado] = useState("")
+    const [page, setPage] = useState(1)
 
     useEffect(() => {
         axios.get(API_ROUTES.PRESTAMOS)
@@ -49,6 +51,11 @@ const HistorialPrestamos = () => {
         const matchEstado = !filtroEstado || p.estado === filtroEstado
         return matchTexto && matchEstado
     })
+
+    const ROWS = 10
+    const totalPages = Math.max(1, Math.ceil(filteredPrestamos.length / ROWS))
+    const paginaActual = Math.min(page, totalPages)
+    const prestamosPagina = filteredPrestamos.slice((paginaActual - 1) * ROWS, paginaActual * ROWS)
 
     const activos = prestamos.filter(p => p.estado === 'activo').length
     const devueltos = prestamos.length - activos
@@ -123,7 +130,7 @@ const HistorialPrestamos = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredPrestamos.map(p => {
+                                {prestamosPagina.map(p => {
                                     const duracion = getDuracion(p)
                                     const situacion = getSituacion(p)
                                     return (
@@ -170,6 +177,8 @@ const HistorialPrestamos = () => {
                         </table>
                     </div>
                 )}
+
+                <Paginador page={paginaActual} setPage={setPage} totalItems={filteredPrestamos.length} size={ROWS} />
             </div>
         </div>
     )

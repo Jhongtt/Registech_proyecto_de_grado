@@ -9,7 +9,7 @@ export const getEstadoClass = (estado) => {
     switch (estado?.toLowerCase()) {
         case 'disponible': return 'estado-disponible'
         case 'asignado': return 'estado-prestamo'
-        case 'mantenimiento': case 'en mantenimiento': return 'estado-mantenimiento'
+        case 'mantenimiento': case 'en mantenimiento': case 'en reparación': return 'estado-mantenimiento'
         case 'baja': case 'inactivo': return 'estado-baja'
         default: return 'estado-baja'
     }

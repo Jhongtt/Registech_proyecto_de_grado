@@ -9,8 +9,8 @@ import { useAuth } from "../context/AuthContext"
 // Cuentas de demostración para la sustentación (credenciales reales de la BD, verificadas).
 const CUENTAS_DEMO = [
     { rol: 'Administrador', icono: 'bi-shield-lock', correo: 'admin@registech.com', contrasena: 'admin123' },
-    { rol: 'Sistemas', icono: 'bi-gear', correo: 'soporte@registech.com', contrasena: 'soporte123' },
-    { rol: 'Inventario', icono: 'bi-box-seam', correo: 'rh@registech.com', contrasena: 'rh123' },
+    { rol: 'Técnico Mantenimiento', icono: 'bi-wrench-adjustable', correo: 'soporte@registech.com', contrasena: 'soporte123' },
+    { rol: 'Inventario', icono: 'bi-box-seam', correo: 'inventario@registech.com', contrasena: 'rh123' },
 ]
 
 const Login = () => {
@@ -209,7 +209,7 @@ const Login = () => {
             return
         }
 
-        const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[\]{};':"\\|,.<>\/?]).{8,}$/
+        const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=[\]{};':"\\|,.<>/?]).{8,}$/
         if (!PASSWORD_REGEX.test(nuevaContrasena)) {
             Swal.fire({ icon: 'warning', title: 'Contraseña débil', text: 'Mínimo 8 caracteres, 1 mayúscula, 1 minúscula, 1 número y 1 símbolo (!@#$%^&* etc.)' })
             return

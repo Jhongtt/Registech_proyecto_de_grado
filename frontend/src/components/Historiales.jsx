@@ -2,17 +2,19 @@ import { useState, useEffect } from "react"
 import axios from "axios"
 import Swal from "sweetalert2"
 import { API_ROUTES } from "../api/apiRoutes"
+import Paginador from "./ui/Paginador"
 
 const Historiales = ({ usuario }) => {
     const [mantenimientos, setMantenimientos] = useState([])
     const [filter, setFilter] = useState("")
     const [detalle, setDetalle] = useState(null)
+    const [page, setPage] = useState(1)
 
     useEffect(() => {
     cargarHistorial()
 }, [])
 
-const cargarHistorial = () => {
+function cargarHistorial() {
     axios.get(API_ROUTES.HISTORIAL_MANTENIMIENTOS)
         .then(response => {
             setMantenimientos(
@@ -70,6 +72,11 @@ const obtenerHistorial = () => {
         })
 }
 
+    const ROWS = 10
+    const totalPages = Math.max(1, Math.ceil(mantenimientos.length / ROWS))
+    const paginaActual = Math.min(page, totalPages)
+    const mantenimientosPagina = mantenimientos.slice((paginaActual - 1) * ROWS, paginaActual * ROWS)
+
     return (
         <div className="card">
             <div className="card-body">
@@ -112,23 +119,23 @@ const obtenerHistorial = () => {
                         <thead className="table-header">
                             <tr className="text-center">
                                 <th>ID Mantenimiento</th>
-                                <th>Numero Serie</th>
+                                <th>Número de Serie</th>
                                 <th>Falla</th>
-                                <th>Solucion</th>
-                                <th>Tecnico</th>
+                                <th>Solución</th>
+                                <th>Técnico</th>
                                 <th>Fecha Reporte</th>
-                                <th>Fecha Solucion</th>
+                                <th>Fecha Solución</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {mantenimientos.map((equipo) => (
+                            {mantenimientosPagina.map((equipo) => (
                                 <tr key={equipo.id_historial}>
                                     <td className="fw-semibold">{equipo.id_historial}</td>
                                     <td>{equipo.num_serie}</td>
                                     <td>{equipo.falla}</td>
                                     <td>{equipo.solucion || 'Pendiente'}</td>
-                                    <td>{equipo.usuario_tecnico || '-'}</td>
+                                    <td>{equipo.nombre_tecnico || equipo.usuario_tecnico || '-'}</td>
                                     <td>{equipo.fecha_reporte ? equipo.fecha_reporte.slice(0, 10) : '-'}</td>
                                     <td>{equipo.fecha_solucion ? equipo.fecha_solucion.slice(0, 10) : '-'}</td>
                                     <td className="text-center">
@@ -145,6 +152,8 @@ const obtenerHistorial = () => {
                     </table>
                 </div>
                 )}
+
+                <Paginador page={paginaActual} setPage={setPage} totalItems={mantenimientos.length} size={ROWS} />
             </div>
 
             {/* MODAL VER DETALLES */}
@@ -223,7 +232,7 @@ const obtenerHistorial = () => {
                                     <div className="col-md-6">
                                         <div className="mb-3">
                                             <small className="text-secondary fw-semibold">Técnico responsable</small>
-                                            <div>{detalle.usuario_tecnico || '-'}</div>
+                                            <div>{detalle.nombre_tecnico || detalle.usuario_tecnico || '-'}</div>
                                         </div>
                                     </div>
                                     <div className="col-md-6">

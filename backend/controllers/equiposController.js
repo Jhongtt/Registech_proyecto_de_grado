@@ -1,8 +1,10 @@
 const equiposService = require('../services/equiposService')
-const { eliminarArchivo } = require('../middlewares/upload')
+const { eliminarArchivo, UPLOADS_DIR } = require('../middlewares/upload')
 const notificacionesService = require('../services/notificacionesService')
 const prisma = require('../lib/prisma')
 const auditoriaService = require('../services/auditoriaService')
+const path = require('path')
+const fs = require('fs')
 const crypto = require('crypto')
 const { subirImagenSupabase, eliminarImagenSupabase } = require('../config/supabase')
 
@@ -107,142 +109,6 @@ exports.agregarEquipo = async (req, res) => {
     }
 }
 
-// ======================================================
-// ASIGNAR USUARIO
-// ======================================================
-
-exports.asignarUsuario = async (req, res) => {
-
-
-try {
-
-    const {
-
-        num_serie,
-
-        usuario
-
-    } = req.body
-
-
-    if (!num_serie || !usuario) {
-
-        return res.status(400).json({
-
-            error: 'El número de serie y el usuario son requeridos'
-
-        })
-
-    }
-
-
-    // ==================================================
-    // BUSCAR EQUIPO
-    // ==================================================
-
-    const equipo = await prisma.equipos.findUnique({
-
-        where: {
-
-            num_serie
-
-        }
-
-    })
-
-
-    if (!equipo) {
-
-        return res.status(404).json({
-
-            error: 'Equipo no encontrado'
-
-        })
-
-    }
-
-
-    // ==================================================
-    // BUSCAR USUARIO
-    // ==================================================
-
-    const usuarioEncontrado =
-
-        await equiposService.buscarUsuario(usuario)
-
-
-    if (!usuarioEncontrado) {
-
-        return res.status(404).json({
-
-            error: 'Usuario no encontrado'
-
-        })
-
-    }
-
-
-    // ==================================================
-    // ACTUALIZAR RESPONSABLE
-    // ==================================================
-
-    await equiposService.updateResponsable(
-
-        num_serie,
-
-        usuario
-
-    )
-
-
-    await auditoriaService.registrar(
-
-        req.usuario.usuario,
-
-        `Asignó el equipo ${num_serie} a ${usuario}`
-
-    )
-
-
-    res.status(200).json({
-
-        mensaje:
-
-            'Se asignó exitosamente el usuario al equipo correspondiente'
-
-    })
-
-} catch (error) {
-
-    console.error(
-
-        'Error al asignar usuario al equipo:',
-
-        error
-
-    )
-
-
-    if (error.code === 'P2025') {
-
-        return res.status(404).json({
-
-            error: 'Equipo no encontrado'
-
-        })
-
-    }
-
-
-    res.status(500).json({
-
-        error: 'Error al asignar el usuario al equipo'
-
-    })
-
-}
-
-}
 
 
 // ======================================================
@@ -851,9 +717,16 @@ exports.resolverReporte = async (req, res) => {
         // SEGURIDAD
         // ==================================================
 
+        const rolesMantenimiento = [
+            'soporte',
+            'admin'
+        ]
+
         if (
             !req.usuario ||
-            req.usuario.rol?.toLowerCase() !== 'mantenimiento'
+            !rolesMantenimiento.includes(
+                req.usuario.rol?.toLowerCase()
+            )
         ) {
 
             return res.status(403).json({
@@ -1285,4 +1158,115 @@ exports.actualizarFoto = async (req, res) => {
         console.error('Error al actualizar foto del equipo:', error);
         res.status(500).json({ error: 'Error al actualizar foto del equipo' });
     }
+}
+
+// ======================================================
+// MOVER EQUIPO DE DEPARTAMENTO / ÁREA
+// ======================================================
+
+exports.moverEquipo = async (req, res) => {
+    try {
+        const { num_serie } = req.params
+        const area = req.body.area
+
+        const existe = await equiposService.encontrarEquipo(num_serie)
+        if (!existe) {
+            return res.status(404).json({ error: 'El equipo no existe' })
+        }
+
+        const areaExiste = await equiposService.verificarArea(area)
+        if (!areaExiste) {
+            return res.status(400).json({ error: 'El departamento no existe' })
+        }
+
+        const actualizado = await equiposService.moverEquipo(num_serie, area)
+
+        await auditoriaService.registrar(
+            req.usuario.usuario,
+            `Movió el equipo ${actualizado.equipo} (${actualizado.num_serie}) al departamento ${area}`
+        )
+
+        await notificacionesService.crear(
+            req.usuario.usuario,
+            'equipos',
+            `El equipo ${actualizado.equipo} (${actualizado.num_serie}) fue reubicado al departamento ${area}.`
+        )
+
+        res.json({
+            mensaje: 'Equipo reubicado exitosamente',
+            equipo: actualizado
+        })
+    } catch (error) {
+        console.error('Error al mover equipo:', error)
+        res.status(500).json({ error: 'Error al mover el equipo' })
+    }
+}
+
+// ======================================================
+// REPORTAR EQUIPO NO LOCALIZADO (EXTRAVÍO)
+// ======================================================
+
+exports.reportarEquipoExtraviado = async (req, res) => {
+    try {
+        const { num_serie } = req.params
+        const observaciones = req.body.observaciones || ''
+
+        const equipo = await equiposService.reportarExtraviado(num_serie)
+        if (!equipo) {
+            return res.status(404).json({ error: 'El equipo no existe' })
+        }
+
+        await notificacionesService.notificarAdmins(
+            'extravio',
+            `ALERTA: El equipo ${equipo.equipo} (${equipo.num_serie}) no aparece en el área ${equipo.area || 'Sin asignar'}${observaciones ? `. Detalle: ${observaciones}` : ''}.`
+        )
+
+        await notificacionesService.crear(
+            req.usuario.usuario,
+            'extravio',
+            `Alertaste sobre el equipo ${equipo.equipo} (${equipo.num_serie}). Se notificó a los administradores.`
+        )
+
+        await auditoriaService.registrar(
+            req.usuario.usuario,
+            `Reportó extravío del equipo ${equipo.equipo} (${equipo.num_serie})`
+        )
+
+        res.json({
+            mensaje: 'Alerta de extravío enviada a los administradores',
+            equipo
+        })
+    } catch (error) {
+        console.error('Error al reportar extravío:', error)
+        res.status(500).json({ error: 'Error al reportar el extravío' })
+    }
+}
+
+// ======================================================
+// SERVIR EVIDENCIA (IMAGEN) DE UN EQUIPO
+// Solo usuarios autenticados pueden ver los archivos.
+// Elimina el acceso público anterior bajo /uploads.
+// ======================================================
+
+exports.obtenerEvidencia = (req, res) => {
+
+    const nombre = path.basename(req.params.nombre || '')
+
+    if (
+        !nombre ||
+        nombre === '.' ||
+        nombre === '..' ||
+        nombre.includes('\\') ||
+        nombre.includes('/')
+    ) {
+        return res.status(400).json({ error: 'Nombre de archivo inválido' })
+    }
+
+    const ruta = path.join(UPLOADS_DIR, nombre)
+
+    if (!fs.existsSync(ruta)) {
+        return res.status(404).json({ error: 'Evidencia no encontrada' })
+    }
+
+    res.sendFile(ruta)
 }

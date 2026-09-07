@@ -72,27 +72,6 @@ exports.crearEquipo = async (datos) => {
 }
 
 
-// ======================================================
-// ACTUALIZAR RESPONSABLE
-// ======================================================
-
-exports.updateResponsable = async (
-    numSerieLimpio,
-    responsable
-) => {
-
-    return await prisma.equipos.update({
-
-        where: {
-            num_serie: numSerieLimpio
-        },
-
-        data: {
-            responsable
-        }
-
-    })
-}
 
 
 // ======================================================
@@ -116,27 +95,6 @@ exports.liberarEquipo = async (numSerieLimpio) => {
 }
 
 
-// ======================================================
-// BUSCAR USUARIO
-// ======================================================
-
-exports.buscarUsuario = async (usuario) => {
-
-    return await prisma.usuarios.findUnique({
-
-        where: {
-            usuario
-        },
-
-        select: {
-            usuario: true,
-            nombre: true,
-            correo: true,
-            rol: true
-        }
-
-    })
-}
 
 
 // ======================================================
@@ -286,6 +244,40 @@ exports.createReporteTransaction = async (
 
 
 // ======================================================
+// ANEXAR NOMBRE REAL DEL TÉCNICO Y DE QUIEN REPORTA
+// ======================================================
+
+async function anexarNombresUsuarios(lista) {
+
+    const usuarios =
+        await prisma.usuarios.findMany({
+
+            select: {
+                usuario: true,
+                nombre: true
+            }
+
+        })
+
+    const mapa = new Map(
+        usuarios.map(u => [u.usuario, u.nombre])
+    )
+
+    return lista.map(r => ({
+        ...r,
+        nombre_tecnico:
+            r.usuario_tecnico
+                ? (mapa.get(r.usuario_tecnico) || r.usuario_tecnico)
+                : null,
+        nombre_reporta:
+            r.usuario_reporta
+                ? (mapa.get(r.usuario_reporta) || r.usuario_reporta)
+                : null
+    }))
+}
+
+
+// ======================================================
 // OBTENER REPORTES ACTIVOS
 //
 // Muestra:
@@ -364,7 +356,7 @@ exports.findReportesPendientes = async () => {
     }
 
 
-    return resultado
+    return anexarNombresUsuarios(resultado)
 }
 
 
@@ -427,7 +419,7 @@ exports.findHistorialCompleto = async () => {
     }
 
 
-    return resultado
+    return anexarNombresUsuarios(resultado)
 }
 
 
@@ -857,7 +849,7 @@ exports.buscarMantenimientos = async (
     }
 
 
-    return resultado
+    return anexarNombresUsuarios(resultado)
 }
 
 
@@ -938,5 +930,39 @@ exports.actualizarFotoEquipo = async (numSerie, urlImagen) => {
     return await prisma.equipos.update({
         where: { num_serie: numSerie },
         data: { imagen: urlImagen }
+    })
+}
+
+// ======================================================
+// MOVER EQUIPO DE DEPARTAMENTO / ÁREA
+// ======================================================
+
+exports.encontrarEquipo = async (numSerie) => {
+    return await prisma.equipos.findUnique({
+        where: { num_serie: numSerie }
+    })
+}
+
+exports.verificarArea = async (area) => {
+    const encontrada = await prisma.areas.findUnique({
+        where: { area }
+    })
+    return !!encontrada
+}
+
+exports.moverEquipo = async (numSerie, area) => {
+    return await prisma.equipos.update({
+        where: { num_serie: numSerie },
+        data: { area }
+    })
+}
+
+// ======================================================
+// REPORTAR EQUIPO NO LOCALIZADO (EXTRAVÍO)
+// ======================================================
+
+exports.reportarExtraviado = async (numSerie) => {
+    return await prisma.equipos.findUnique({
+        where: { num_serie: numSerie }
     })
 }
