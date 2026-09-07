@@ -129,6 +129,37 @@ exports.liberarEquipo = async (req, res) => {
 }
 
 // ======================================================
+// REINTEGRAR EQUIPO (DESDE BAJA A DISPONIBLE)
+// ======================================================
+
+exports.reintegrarEquipo = async (req, res) => {
+    try {
+        const { num_serie } = req.params;
+        
+        // Llamamos al servicio para cambiar el estado a disponible (o el equivalente activo que manejen)
+        const equipo = await equiposService.reintegrarEquipo(num_serie);
+        
+        if (!equipo) {
+            return res.status(404).json({ error: 'Equipo no encontrado' });
+        }
+
+        await auditoriaService.registrar(
+            req.usuario.usuario, 
+            `Reintegró el equipo ${equipo.num_serie} (${equipo.equipo}), volvió a estar disponible desde estado de baja`
+        );
+
+        res.status(200).json({ 
+            mensaje: 'Equipo reintegrado exitosamente y disponible nuevamente', 
+            equipo 
+        });
+    } catch (error) {
+        console.error('Error al reintegrar equipo:', error);
+        res.status(500).json({ error: 'Error al reintegrar el equipo' });
+    }
+}
+
+
+// ======================================================
 // REPORTAR FALLA
 // ======================================================
 

@@ -17,7 +17,8 @@ const {
     actualizarFoto,
     moverEquipo,
     reportarEquipoExtraviado,
-    obtenerEvidencia
+    obtenerEvidencia,
+    reintegrarEquipo
 } = require('../controllers/equiposController')
 
 const { authMiddleware, requireRol } = require('../middlewares/auth')
@@ -132,6 +133,13 @@ router.post(
     requireRol('admin', 'inventario'),
     validate(reportarExtraviadoSchema),
     reportarEquipoExtraviado
+)
+
+router.post(
+    '/equipos/:num_serie/reintegrar',
+    authMiddleware,
+    requireRol('admin', 'inventario'),
+    reintegrarEquipo
 )
 
 module.exports = router
