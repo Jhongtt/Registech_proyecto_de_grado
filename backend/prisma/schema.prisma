@@ -21,7 +21,7 @@ model equipos {
   area              String             @db.VarChar(100)
   descripcion       String?
   estado            String             @db.VarChar(50)
-  responsable       String?            @db.VarChar(20)
+  responsable       String?            @db.VarChar(100)
   fecha_adquisicion DateTime           @db.Date
   fecha_asignacion  DateTime?          @db.Date
   fecha_baja        DateTime?          @db.Date

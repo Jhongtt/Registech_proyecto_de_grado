@@ -103,7 +103,7 @@ const Reportes = ({ usuario }) => {
                         m.id_historial, m.num_serie, m.equipo || '', m.falla, m.estado_orden,
                         m.aprobada_por || '',
                         m.fecha_aprobacion ? String(m.fecha_aprobacion).slice(0, 10) : '',
-                        m.usuario_tecnico || '', m.solucion || '',
+                        m.nombre_tecnico || m.usuario_tecnico || '', m.solucion || '',
                         String(m.fecha_reporte || '').slice(0, 10),
                         m.fecha_solucion ? String(m.fecha_solucion).slice(0, 10) : ''
                     ])

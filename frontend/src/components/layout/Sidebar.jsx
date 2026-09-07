@@ -16,7 +16,7 @@ const MENU = [
         roles: ['admin', 'inventario']
     },
     {
-        label: 'Prestamos',
+        label: 'Préstamos',
         icon: 'bi-arrow-left-right',
         path: '/loans',
         roles: ['admin']
@@ -46,7 +46,7 @@ const MENU = [
         roles: ['admin']
     },
     {
-        label: 'Configuracion',
+        label: 'Configuración',
         icon: 'bi-gear',
         path: '/settings',
         roles: ['admin', 'soporte', 'inventario']

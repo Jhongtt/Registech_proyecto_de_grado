@@ -16,7 +16,7 @@ const crearUsuarioSchema = z.object({
         contrasena: z.string({ required_error: 'La contraseña es obligatoria' }).regex(PASSWORD_REGEX, PASSWORD_MSG),
         nombre: z.string({ required_error: 'El nombre es obligatorio' }).max(200),
         area: z.string({ required_error: 'El área es obligatoria' }).max(100),
-        rol: z.enum(['admin', 'inventario', 'sistemas']).optional(),
+        rol: z.enum(['admin', 'inventario', 'soporte']).optional(),
         correo: z.string({ required_error: 'El correo es obligatorio' }).email('Debe ser un correo válido').max(50),
         estado: z.string().optional()
     })
@@ -33,7 +33,7 @@ const actualizarUsuarioSchema = z.object({
             PASSWORD_MSG
         ),
         area: z.string({ required_error: 'El área es obligatoria' }).max(100),
-        rol: z.enum(['admin', 'inventario', 'sistemas']).optional(),
+        rol: z.enum(['admin', 'inventario', 'soporte']).optional(),
         correo: z.string({ required_error: 'El correo es obligatorio' }).email('Debe ser un correo válido').max(50),
         estado: z.string().optional()
     })

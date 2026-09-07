@@ -15,7 +15,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "jest --forceExit ",
+    "test": "jest --forceExit --setupFilesAfterEnv ./tests/setup.js",
     "dev": "nodemon index.js"
   },
   "dependencies": {
@@ -28,12 +28,10 @@
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
-    "duckduckgo-images-api": "^1.0.5",
     "exceljs": "^4.4.0",
     "express": "^5.2.1",
     "express-rate-limit": "^8.6.2",
     "extend": "^3.0.2",
-    "g-i-s": "^2.1.7",
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.2.0",

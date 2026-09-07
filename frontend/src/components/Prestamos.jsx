@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import axios from "axios"
 import Swal from "sweetalert2"
 import { API_ROUTES } from "../api/apiRoutes"
+import Paginador from "./ui/Paginador"
 
 // =========================================================
 // FECHAS
@@ -78,6 +79,7 @@ const Prestamos = () => {
     // =====================================================
 
     const [busqueda, setBusqueda] = useState("")
+    const [page, setPage] = useState(1)
 
     // =====================================================
     // MODAL NUEVO PRÉSTAMO
@@ -134,7 +136,7 @@ const Prestamos = () => {
         cargarDatos()
     }, [])
 
-    const cargarDatos = async () => {
+    async function cargarDatos() {
 
         setLoading(true)
 
@@ -631,6 +633,11 @@ const Prestamos = () => {
                 })
             )
         })
+
+    const ROWS = 8
+    const totalPages = Math.max(1, Math.ceil(filteredPrestamos.length / ROWS))
+    const paginaActual = Math.min(page, totalPages)
+    const prestamosPagina = filteredPrestamos.slice((paginaActual - 1) * ROWS, paginaActual * ROWS)
 
     // =====================================================
     // ABRIR PRÉSTAMO
@@ -1427,7 +1434,7 @@ const Prestamos = () => {
 
                             ) : (
 
-                                filteredPrestamos.map(p => (
+                                prestamosPagina.map(p => (
 
                                     <tr
                                         key={p.id_prestamo}
@@ -1558,6 +1565,8 @@ const Prestamos = () => {
                     </table>
 
                 </div>
+
+                <Paginador page={paginaActual} setPage={setPage} totalItems={filteredPrestamos.length} size={ROWS} />
 
             </div>
 

@@ -1,12 +1,5 @@
 const { z } = require('zod');
 
-const asignarUsuarioSchema = z.object({
-    body: z.object({
-        num_serie: z.string({ required_error: 'El número de serie es requerido' }).min(1, 'No puede estar vacío').max(50),
-        usuario: z.string().max(50).optional().nullable()
-    })
-});
-
 const reporteFallaSchema = z.object({
     body: z.object({
         num_serie: z.string({ required_error: 'El número de serie es requerido' }).min(1).max(50),
@@ -44,10 +37,28 @@ const crearEquipoSchema = z.object({
         sistema_operativo: z.string().max(60).optional().nullable(),
         area: z.string().max(100).optional().nullable(),
         fecha_adquisicion: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha inválida (YYYY-MM-DD)').optional().nullable(),
-        estado: z.enum(['Disponible', 'En mantenimiento', 'Baja'], {
+        estado: z.enum(['Disponible', 'En mantenimiento', 'En reparación', 'Baja'], {
             errorMap: () => ({ message: 'Estado inicial inválido' })
         })
     })
 });
 
-module.exports = { asignarUsuarioSchema, reporteFallaSchema, resolverReporteSchema, buscarMantenimientosSchema, decisionAprobacionSchema, crearEquipoSchema };
+const moverEquipoSchema = z.object({
+    params: z.object({
+        num_serie: z.string({ required_error: 'El número de serie es requerido' }).min(1).max(50)
+    }),
+    body: z.object({
+        area: z.string({ required_error: 'El departamento de destino es requerido' }).min(2, 'El departamento no es válido').max(100)
+    })
+});
+
+const reportarExtraviadoSchema = z.object({
+    params: z.object({
+        num_serie: z.string({ required_error: 'El número de serie es requerido' }).min(1).max(50)
+    }),
+    body: z.object({
+        observaciones: z.string().max(500).optional().nullable()
+    })
+});
+
+module.exports = { reporteFallaSchema, resolverReporteSchema, buscarMantenimientosSchema, decisionAprobacionSchema, crearEquipoSchema, moverEquipoSchema, reportarExtraviadoSchema };

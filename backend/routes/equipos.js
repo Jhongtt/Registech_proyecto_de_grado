@@ -6,7 +6,6 @@ const {
     getEquipos,
     getEstadosEquipo,
     agregarEquipo,
-    asignarUsuario,
     liberarEquipo,
     reporteFalla,
     getReportes,
@@ -15,7 +14,10 @@ const {
     resolverReporte,
     buscarMantenimientos,
     aprobarRechazarOrden,
-    actualizarFoto
+    actualizarFoto,
+    moverEquipo,
+    reportarEquipoExtraviado,
+    obtenerEvidencia
 } = require('../controllers/equiposController')
 
 const { authMiddleware, requireRol } = require('../middlewares/auth')
@@ -23,16 +25,23 @@ const { upload, uploadMemoria } = require('../middlewares/upload')
 const { validate } = require('../middlewares/validate')
 
 const {
-    asignarUsuarioSchema,
     reporteFallaSchema,
     resolverReporteSchema,
     buscarMantenimientosSchema,
     decisionAprobacionSchema,
-    crearEquipoSchema
+    crearEquipoSchema,
+    moverEquipoSchema,
+    reportarExtraviadoSchema
 } = require('../schemas/equipos.schema')
 
 
 router.get('/estados_equipo', authMiddleware, getEstadosEquipo)
+
+router.get(
+    '/equipos/evidencia/:nombre',
+    authMiddleware,
+    obtenerEvidencia
+)
 
 router.get('/equipos', authMiddleware, getEquipos)
 
@@ -45,17 +54,10 @@ router.get(
 router.post(
     '/equipos/add',
     authMiddleware,
-    requireRol('admin'),
+    requireRol('admin', 'inventario'),
     uploadMemoria.single('foto'),
     validate(crearEquipoSchema),
     agregarEquipo
-)
-
-router.post(
-    '/equipos/asignacion',
-    authMiddleware,
-    validate(asignarUsuarioSchema),
-    asignarUsuario
 )
 
 router.post(
@@ -67,7 +69,7 @@ router.post(
 router.post(
     '/equipos/reporte/add',
     authMiddleware,
-    requireRol('soporte', 'sistemas', 'admin'),
+    requireRol('soporte', 'admin'),
     upload.single('foto'),
     validate(reporteFallaSchema),
     reporteFalla
@@ -82,7 +84,7 @@ router.get(
 router.get(
     '/equipos/mantenimientos',
     authMiddleware,
-    requireRol('admin', 'sistemas'),
+    requireRol('admin', 'soporte'),
     getHistorialMantenimientos
 )
 
@@ -114,6 +116,22 @@ router.patch(
     requireRol('admin', 'inventario'),
     uploadMemoria.single('foto'),
     actualizarFoto
+)
+
+router.patch(
+    '/equipos/:num_serie/ubicacion',
+    authMiddleware,
+    requireRol('admin', 'inventario'),
+    validate(moverEquipoSchema),
+    moverEquipo
+)
+
+router.post(
+    '/equipos/:num_serie/reportar-extraviado',
+    authMiddleware,
+    requireRol('admin', 'inventario'),
+    validate(reportarExtraviadoSchema),
+    reportarEquipoExtraviado
 )
 
 module.exports = router

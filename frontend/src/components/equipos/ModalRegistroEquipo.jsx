@@ -130,6 +130,7 @@ export default function ModalRegistroEquipo({ areas, onClose, onRegistrado }) {
                                 >
                                     <option value="Disponible">Disponible</option>
                                     <option value="En mantenimiento">En mantenimiento</option>
+                                    <option value="En reparación">En reparación</option>
                                     <option value="Baja">Baja</option>
                                 </select>
                             </div>

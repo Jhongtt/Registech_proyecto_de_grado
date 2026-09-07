@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext'
 const PMC = () => {
     const { usuario } = useAuth()
     const esAdmin = usuario?.rol === 'admin'
+    const esInventario = usuario?.rol === 'inventario'
 
     const [pmcs, setPmcs] = useState([])
     const [loading, setLoading] = useState(true)
@@ -230,7 +231,7 @@ const PMC = () => {
                 <h2 className="module-title mb-0">
                     Inventario Menor (PMC)
                 </h2>
-                {esAdmin ? (
+                {(esAdmin || esInventario) ? (
                     <button className="btn btn-primary" onClick={abrirModalCrear}>
                         <i className="bi bi-plus-circle me-2"></i>Registrar PMC
                     </button>

@@ -1,6 +1,5 @@
 require('dotenv').config();
 const express = require('express')
-const path = require('path')
 const cors = require('cors')
 const helmet = require('helmet')
 const rateLimit = require('express-rate-limit')
@@ -99,15 +98,6 @@ app.use('/api', dashboardRoutes)
 app.use('/api', solicitudesRoutes)
 app.use('/api/pmc', pmcRoutes)
 app.use('/api', notificacionesRoutes)
-
-// SERVIR LAS EVIDENCIAS FOTOGRAFICAS DE MANTENIMIENTO
-app.use(
-    '/uploads',
-    express.static(
-        path.join(__dirname, 'uploads'),
-        { maxAge: '1d' }
-    )
-)
 
 // RUTA DE SALUD DEL SERVIDOR
 app.get('/api/health', (req, res) => {

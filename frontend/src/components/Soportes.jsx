@@ -388,7 +388,7 @@
                                 {enReparacion} en reparación
                             </span>
 
-                            {/* Admin, soporte y sistemas pueden reportar */}
+                            {/* Admin y soporte pueden reportar */}
 <button
     className="btn btn-sm btn-primary"
     style={{ minWidth: '135px' }}
@@ -469,11 +469,12 @@
                                                             alt="Evidencia del daño"
                                                             className="rounded border"
                                                             style={{
-                                                                width: '56px',
-                                                                height: '42px',
+                                                                width: '72px',
+                                                                height: '54px',
                                                                 objectFit: 'cover',
                                                                 cursor: 'zoom-in'
                                                             }}
+                                                            title="Click para ampliar"
                                                             onClick={() =>
                                                                 setFotoAmpliada(m.evidencia)
                                                             }
@@ -1125,7 +1126,7 @@
 
                                                     <i className="bi bi-tools me-1"></i>
 
-                                                    Técnico: {ordenDetalle.usuario_tecnico || '—'}
+                                                    Técnico: {ordenDetalle.nombre_tecnico || ordenDetalle.usuario_tecnico || '—'}
 
                                                     {' · '}
 
