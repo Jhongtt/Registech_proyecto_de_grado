@@ -966,3 +966,24 @@ exports.reportarExtraviado = async (numSerie) => {
         where: { num_serie: numSerie }
     })
 }
+
+// ======================================================
+// REINTEGRAR EQUIPO EN LA BASE DE DATOS
+// ======================================================
+
+exports.reintegrarEquipo = async (num_serie) => {
+    const equipoExistente = await prisma.equipos.findUnique({
+        where: { num_serie }
+    });
+
+    if (!equipoExistente) return null;
+
+    const equipoActualizado = await prisma.equipos.update({
+        where: { num_serie },
+        data: { 
+            estado: 'Disponible' 
+        }
+    });
+
+    return equipoActualizado;
+};
