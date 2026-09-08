@@ -127,6 +127,42 @@ export default function EquipoCard({ equipo, onPrestamo, onDevolver, vencimiento
     }
 
     // ======================================================
+    // REINTEGRAR EQUIPO (DE BAJA O EXTRAVIADO A DISPONIBLE)
+    // ======================================================
+
+    const handleReintegrar = async () => {
+        const { isConfirmed } = await Swal.fire({
+            title: '¿Reintegrar equipo?',
+            html: `El equipo <strong>${equipo.equipo}</strong> (${equipo.num_serie}) volverá a estar <span class="text-success fw-bold">Disponible</span>.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#16a34a',
+            confirmButtonText: '<i class="bi bi-arrow-counterclockwise me-1"></i>Sí, reintegrar',
+            cancelButtonText: 'Cancelar'
+        })
+
+        if (isConfirmed) {
+            try {
+                const res = await axios.post(API_ROUTES.REINTEGRAR_EQUIPO(equipo.num_serie))
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Equipo reintegrado',
+                    text: 'El equipo ahora se encuentra disponible.',
+                    timer: 2500,
+                    showConfirmButton: false
+                })
+                if (onEquipoActualizado) onEquipoActualizado(res.data.equipo)
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.response?.data?.error || 'No se pudo reintegrar el equipo'
+                })
+            }
+        }
+    }
+
+    // ======================================================
     // CARGAR HISTORIAL DE USO
     // ======================================================
 
@@ -198,6 +234,7 @@ export default function EquipoCard({ equipo, onPrestamo, onDevolver, vencimiento
         }
     }
 
+    
     // ======================================================
     // ACCIONES DEL MODAL
     // ======================================================
@@ -227,6 +264,19 @@ export default function EquipoCard({ equipo, onPrestamo, onDevolver, vencimiento
                 >
                     <i className="bi bi-arrow-return-left me-1"></i>
                     Registrar Devolución
+                </button>
+            )}
+
+            {(equipo.estado === 'Baja' || equipo.estado === 'Extraviado') && puedeGestionar && (
+                <button
+                    className="btn btn-success"
+                    onClick={() => {
+                        setVerDetalle(false)
+                        handleReintegrar()
+                    }}
+                >
+                    <i className="bi bi-arrow-counterclockwise me-1"></i>
+                    Reintegrar Equipo
                 </button>
             )}
         </>
@@ -332,23 +382,35 @@ export default function EquipoCard({ equipo, onPrestamo, onDevolver, vencimiento
                             </div>
                         )}
 
-                        {puedeGestionar && equipo.estado !== 'Baja' && (
+                        {puedeGestionar && (
                             <div className="d-flex gap-2 mt-2">
-                                <button
-                                    className="btn btn-sm btn-primary flex-grow-1"
-                                    onClick={handleMoverArea}
-                                    title="Mover de departamento"
-                                >
-                                    Mover
-                                </button>
+                                {(equipo.estado === 'Baja' || equipo.estado === 'Extraviado') ? (
+                                    <button
+                                        className="btn btn-sm btn-success w-100"
+                                        onClick={handleReintegrar}
+                                        title="Reintegrar al inventario"
+                                    >
+                                        <i className="bi bi-arrow-counterclockwise me-1"></i> Reintegrar
+                                    </button>
+                                ) : (
+                                    <>
+                                        <button
+                                            className="btn btn-sm btn-primary flex-grow-1"
+                                            onClick={handleMoverArea}
+                                            title="Mover de departamento"
+                                        >
+                                            Mover
+                                        </button>
 
-                                <button
-                                    className="btn btn-sm btn-danger flex-grow-1"
-                                    onClick={handleReportarExtraviado}
-                                    title="Reportar extravío"
-                                >
-                                    Extravío
-                                </button>
+                                        <button
+                                            className="btn btn-sm btn-danger flex-grow-1"
+                                            onClick={handleReportarExtraviado}
+                                            title="Reportar extravío"
+                                        >
+                                            Extravío
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         )}
 
