@@ -235,3 +235,41 @@ exports.historialEquipo = async (num_serie) => {
 exports.getEstadisticas = async () => {
     return await prestamosRepository.getEstadisticasData()
 }
+
+
+// ======================================================
+// HISTORIAL DE PRÉSTAMOS DE UN EMPLEADO
+// ======================================================
+
+exports.getHistorialEmpleado = async (idEmpleado) => {
+
+    const idEmpleadoLimpio =
+        sanitizarTexto(idEmpleado, 50)
+
+    if (!idEmpleadoLimpio) {
+        throw new Error('REQUERIDOS')
+    }
+
+    return await prestamosRepository.findHistorialEmpleado(
+        idEmpleadoLimpio
+    )
+}
+
+
+// ======================================================
+// HISTORIAL DE PRÉSTAMOS DE UN USUARIO
+// ======================================================
+
+exports.getHistorialUsuario = async (idUsuario) => {
+
+    const idUsuarioLimpio =
+        Number(idUsuario)
+
+    if (!idUsuarioLimpio || isNaN(idUsuarioLimpio)) {
+        throw new Error('REQUERIDOS')
+    }
+
+    return await prestamosRepository.findHistorialUsuario(
+        idUsuarioLimpio
+    )
+}

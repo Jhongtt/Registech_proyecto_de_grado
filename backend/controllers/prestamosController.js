@@ -1,6 +1,7 @@
 const prestamosService = require('../services/prestamosService')
 const notificacionesService = require('../services/notificacionesService')
 const auditoriaService = require('../services/auditoriaService')
+const emailService = require('../services/emailService')
 
 
 // ======================================================
@@ -96,14 +97,76 @@ exports.crearPrestamo = async (req, res) => {
         // CREAR PRÉSTAMO
         // ==============================================
 
-        await prestamosService.crearPrestamo(
-            num_series,
-            id_empleado,
-            id_usuario,
-            observaciones,
-            fecha_inicio,
-            fecha_limite
-        )
+        const prestamoCreado =
+            await prestamosService.crearPrestamo(
+                num_series,
+                id_empleado,
+                id_usuario,
+                observaciones,
+                fecha_inicio,
+                fecha_limite
+            )
+
+
+        // ==============================================
+        // ENVIAR CORREO AL DESTINATARIO
+        // ==============================================
+
+        let correoEnviado = false
+
+        try {
+
+            const prestamos =
+                await prestamosService.getPrestamos()
+
+            const prestamoCompleto =
+                prestamos.find(
+                    prestamo =>
+                        prestamo.id_prestamo ===
+                        prestamoCreado.id_prestamo
+                )
+
+            if (prestamoCompleto) {
+
+                const correo =
+                    prestamoCompleto.correo ||
+                    prestamoCompleto.correo_empleado ||
+                    prestamoCompleto.correo_usuario
+
+                if (correo) {
+
+                    await emailService.enviarReciboPrestamo({
+                        ...prestamoCompleto,
+                        correo
+                    })
+
+                    correoEnviado = true
+
+                    console.log(
+                        `Correo de préstamo enviado a ${correo}`
+                    )
+
+                } else {
+
+                    console.warn(
+                        'No se pudo enviar el correo: el destinatario no tiene correo registrado.'
+                    )
+                }
+
+            } else {
+
+                console.warn(
+                    'No se pudo obtener la información completa del préstamo para enviar el correo.'
+                )
+            }
+
+        } catch (error) {
+
+            console.error(
+                'El préstamo fue creado, pero no se pudo enviar el correo:',
+                error.message
+            )
+        }
 
 
         // ==============================================
@@ -148,7 +211,13 @@ exports.crearPrestamo = async (req, res) => {
         // ==============================================
 
         res.status(201).json({
-            mensaje: 'Préstamo registrado exitosamente'
+
+            mensaje: correoEnviado
+                ? 'Préstamo registrado y correo enviado exitosamente'
+                : 'Préstamo registrado exitosamente, pero no se pudo enviar el correo',
+
+            correoEnviado
+
         })
 
 
@@ -492,6 +561,82 @@ exports.getEstadisticas = async (req, res) => {
 
         res.status(500).json({
             error: 'Error al obtener estadisticas'
+        })
+    }
+}
+
+
+// ======================================================
+// HISTORIAL DE PRÉSTAMOS DE UN EMPLEADO
+// ======================================================
+
+exports.historialEmpleado = async (req, res) => {
+
+    try {
+
+        const historial =
+            await prestamosService.getHistorialEmpleado(
+                req.params.id
+            )
+
+        res.json(historial)
+
+    } catch (error) {
+
+        if (error.message === 'REQUERIDOS') {
+
+            return res.status(400).json({
+                error: 'El id del empleado es requerido'
+            })
+        }
+
+
+        console.error(
+            'Error al obtener historial del empleado:',
+            error
+        )
+
+
+        res.status(500).json({
+            error: 'Error al obtener historial del empleado'
+        })
+    }
+}
+
+
+// ======================================================
+// HISTORIAL DE PRÉSTAMOS DE UN USUARIO
+// ======================================================
+
+exports.historialUsuario = async (req, res) => {
+
+    try {
+
+        const historial =
+            await prestamosService.getHistorialUsuario(
+                req.params.id
+            )
+
+        res.json(historial)
+
+    } catch (error) {
+
+        if (error.message === 'REQUERIDOS') {
+
+            return res.status(400).json({
+                error: 'El id del usuario es requerido'
+            })
+        }
+
+
+        console.error(
+            'Error al obtener historial del usuario:',
+            error
+        )
+
+
+        res.status(500).json({
+            error: 'Error al obtener historial del usuario'
         })
     }
 }

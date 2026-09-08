@@ -6,20 +6,87 @@ const pmcController = require('../controllers/pmcController');
 
 const { authMiddleware, requireRol } = require('../middlewares/auth');
 
-// Autenticado puede consultar; crear/modificar/gestión de stock solo admin o inventario
+// =========================================================
+// AUTENTICACIÓN
+// =========================================================
+
 router.use(authMiddleware);
 
+
+// =========================================================
+// PRODUCTOS PMC
+// =========================================================
+
+// Cualquier usuario autenticado puede consultar el inventario
 router.get('/', pmcController.obtenerTodos);
 
-router.post('/', requireRol('admin', 'inventario'), pmcController.crearProducto);
 
-router.put('/:id', requireRol('admin', 'inventario'), pmcController.actualizarProducto);
+// Crear producto
+router.post(
+    '/',
+    requireRol('admin', 'inventario'),
+    pmcController.crearProducto
+);
 
-router.delete('/:id', requireRol('admin', 'inventario'), pmcController.eliminarProducto);
 
-// Rutas rápidas de stock
-router.post('/:id/entregar', requireRol('admin', 'inventario'), pmcController.entregarProducto);
+// Actualizar producto
+router.put(
+    '/:id',
+    requireRol('admin', 'inventario'),
+    pmcController.actualizarProducto
+);
 
-router.post('/:id/devolver', requireRol('admin', 'inventario'), pmcController.devolverProducto);
+
+// Eliminar producto
+router.delete(
+    '/:id',
+    requireRol('admin', 'inventario'),
+    pmcController.eliminarProducto
+);
+
+
+// =========================================================
+// ENTREGAS PMC
+// =========================================================
+
+// Registrar entrega de PMC
+// Recibe:
+// - cantidad
+// - id_empleado o id_usuario
+// - area
+// - fecha_entrega
+// - observaciones
+router.post(
+    '/:id/entregar',
+    requireRol('admin', 'inventario'),
+    pmcController.entregarProducto
+);
+
+
+// =========================================================
+// HISTORIAL DE ENTREGAS PMC
+// =========================================================
+
+// Historial general de todas las entregas
+router.get(
+    '/entregas/historial',
+    requireRol('admin', 'inventario'),
+    pmcController.obtenerTodasLasEntregas
+);
+
+
+// Historial de entregas de un empleado
+router.get(
+    '/entregas/empleado/:id',
+    pmcController.obtenerEntregasPorEmpleado
+);
+
+
+// Historial de entregas de un usuario
+router.get(
+    '/entregas/usuario/:id',
+    pmcController.obtenerEntregasPorUsuario
+);
+
 
 module.exports = router;

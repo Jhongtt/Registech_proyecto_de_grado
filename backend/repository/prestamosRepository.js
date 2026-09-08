@@ -85,8 +85,14 @@ exports.findPrestamos = async () => {
 
         estado: prestamo.estado,
 
-        fecha_prestamo: prestamo.fecha_prestamo,
+        fecha_prestamo:
+            prestamo.fecha_prestamo,
 
+        // Fecha programada
+        fecha_devolucion_programada:
+            prestamo.fecha_devolucion_programada,
+
+        // Fecha REAL de devolución
         fecha_devolucion:
             prestamo.fecha_devolucion,
 
@@ -103,9 +109,11 @@ exports.findPrestamos = async () => {
 
         equipos: prestamo.equipos.map(relacion => ({
 
-            num_serie: relacion.num_serie,
+            num_serie:
+                relacion.num_serie,
 
-            estado: relacion.estado,
+            estado:
+                relacion.estado,
 
             equipo:
                 relacion.equipo?.equipo ||
@@ -266,6 +274,12 @@ exports.findPrestamosActivos = async () => {
                 prestamo.fecha_prestamo,
 
 
+            // Fecha programada
+            fecha_devolucion_programada:
+                prestamo.fecha_devolucion_programada,
+
+
+            // Fecha REAL de devolución
             fecha_devolucion:
                 prestamo.fecha_devolucion,
 
@@ -476,6 +490,12 @@ exports.findPrestamoActivoPorEquipo = async (
             prestamo.fecha_prestamo,
 
 
+        // Fecha programada
+        fecha_devolucion_programada:
+            prestamo.fecha_devolucion_programada,
+
+
+        // Fecha REAL de devolución
         fecha_devolucion:
             prestamo.fecha_devolucion,
 
@@ -712,19 +732,32 @@ exports.crearPrestamoTransaction = async (
                     area:
                         areaDestinatario,
 
+
+                    // Fecha en la que se hizo el préstamo
                     fecha_prestamo:
                         fechaInicio
                             ? new Date(fechaInicio)
                             : new Date(),
 
-                    fecha_devolucion:
+
+                    // Fecha límite / programada
+                    fecha_devolucion_programada:
                         fechaLimite
                             ? new Date(fechaLimite)
                             : null,
 
+
+                    // Se llena solamente cuando
+                    // realmente se devuelve
+                    fecha_devolucion:
+                        null,
+
+
                     estado:
                         'activo',
 
+
+                    // Observaciones originales
                     observaciones:
                         observacionesLimpias ||
                         null
@@ -874,6 +907,7 @@ exports.devolverPrestamoTransaction = async (
                 },
 
                 data: {
+
                     estado:
                         'devuelto'
                 }
@@ -924,15 +958,16 @@ exports.devolverPrestamoTransaction = async (
 
             data: {
 
+                // Fecha REAL de devolución
                 fecha_devolucion:
                     new Date(),
 
                 estado:
                     'devuelto',
 
-                observaciones:
-                    observaciones ??
-                    prestamo.observaciones,
+                // IMPORTANTE:
+                // NO modificamos las observaciones
+                // originales del préstamo.
 
                 evidencia:
                     evidencia ??
@@ -942,6 +977,7 @@ exports.devolverPrestamoTransaction = async (
 
 
         return {
+
             equiposDevueltos:
                 numSeries.length
         }
@@ -1117,12 +1153,12 @@ exports.devolverEquipoTransaction = async (
                     estado:
                         'devuelto',
 
+                    // Fecha REAL de devolución
                     fecha_devolucion:
                         new Date(),
 
-                    observaciones:
-                        observaciones ??
-                        prestamo.observaciones,
+                    // Conservamos las observaciones
+                    // originales del préstamo.
 
                     evidencia:
                         evidencia ??
@@ -1144,9 +1180,8 @@ exports.devolverEquipoTransaction = async (
                     estado:
                         'parcial',
 
-                    observaciones:
-                        observaciones ??
-                        prestamo.observaciones,
+                    // Conservamos las observaciones
+                    // originales del préstamo.
 
                     evidencia:
                         evidencia ??
@@ -1289,6 +1324,12 @@ exports.findHistorialEquipo = async (
             relacion.prestamo.fecha_prestamo,
 
 
+        // Fecha programada
+        fecha_devolucion_programada:
+            relacion.prestamo.fecha_devolucion_programada,
+
+
+        // Fecha REAL
         fecha_devolucion:
             relacion.prestamo.fecha_devolucion,
 
@@ -1406,4 +1447,176 @@ exports.getEstadisticasData = async () => {
 
         baja
     }
+}
+
+
+// ======================================================
+// HISTORIAL DE PRÉSTAMOS DE UN EMPLEADO
+// ======================================================
+
+exports.findHistorialEmpleado = async (idEmpleado) => {
+
+    const prestamos =
+        await prisma.prestamos.findMany({
+
+            where: {
+                id_empleado:
+                    idEmpleado
+            },
+
+            include: {
+
+                equipos: {
+
+                    include: {
+                        equipo: true
+                    }
+                }
+            },
+
+            orderBy: {
+
+                fecha_prestamo:
+                    'desc'
+            }
+        })
+
+
+    return prestamos.map(prestamo => ({
+
+        tipo:
+            'prestamo',
+
+        id_prestamo:
+            prestamo.id_prestamo,
+
+        estado:
+            prestamo.estado,
+
+        // Fecha en la que se hizo el préstamo
+        fecha_prestamo:
+            prestamo.fecha_prestamo,
+
+        // Fecha programada
+        fecha_devolucion_programada:
+            prestamo.fecha_devolucion_programada,
+
+        // Fecha REAL en la que se devolvió
+        fecha_devolucion:
+            prestamo.fecha_devolucion,
+
+        area:
+            prestamo.area,
+
+        // Observaciones originales
+        observaciones:
+            prestamo.observaciones,
+
+        evidencia:
+            prestamo.evidencia,
+
+        equipos:
+            prestamo.equipos.map(relacion => ({
+
+                num_serie:
+                    relacion.num_serie,
+
+                estado:
+                    relacion.estado,
+
+                equipo:
+                    relacion.equipo?.equipo ||
+                    null,
+
+                descripcion:
+                    relacion.equipo?.descripcion ||
+                    null
+            }))
+    }))
+}
+
+
+// ======================================================
+// HISTORIAL DE PRÉSTAMOS DE UN USUARIO
+// ======================================================
+
+exports.findHistorialUsuario = async (idUsuario) => {
+
+    const prestamos =
+        await prisma.prestamos.findMany({
+
+            where: {
+                id_usuario:
+                    Number(idUsuario)
+            },
+
+            include: {
+
+                equipos: {
+
+                    include: {
+                        equipo: true
+                    }
+                }
+            },
+
+            orderBy: {
+
+                fecha_prestamo:
+                    'desc'
+            }
+        })
+
+
+    return prestamos.map(prestamo => ({
+
+        tipo:
+            'prestamo',
+
+        id_prestamo:
+            prestamo.id_prestamo,
+
+        estado:
+            prestamo.estado,
+
+        // Fecha en la que se hizo el préstamo
+        fecha_prestamo:
+            prestamo.fecha_prestamo,
+
+        // Fecha programada
+        fecha_devolucion_programada:
+            prestamo.fecha_devolucion_programada,
+
+        // Fecha REAL en la que se devolvió
+        fecha_devolucion:
+            prestamo.fecha_devolucion,
+
+        area:
+            prestamo.area,
+
+        // Observaciones originales
+        observaciones:
+            prestamo.observaciones,
+
+        evidencia:
+            prestamo.evidencia,
+
+        equipos:
+            prestamo.equipos.map(relacion => ({
+
+                num_serie:
+                    relacion.num_serie,
+
+                estado:
+                    relacion.estado,
+
+                equipo:
+                    relacion.equipo?.equipo ||
+                    null,
+
+                descripcion:
+                    relacion.equipo?.descripcion ||
+                    null
+            }))
+    }))
 }

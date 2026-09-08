@@ -9,6 +9,8 @@ const {
     crearPrestamo,
     devolverEquipo,
     historialEquipo,
+    historialEmpleado,
+    historialUsuario,
     getEstadisticas
 } = require('../controllers/prestamosController')
 
@@ -87,6 +89,31 @@ router.get(
     validate(historialEquipoSchema),
     historialEquipo
 )
+
+
+// ======================================================
+// HISTORIAL DE PRÉSTAMOS DE UN EMPLEADO
+// ======================================================
+
+router.get(
+    '/prestamos/historial/empleado/:id',
+    authMiddleware,
+    historialEmpleado
+)
+
+
+// ======================================================
+// HISTORIAL DE PRÉSTAMOS DE UN USUARIO
+// ======================================================
+
+router.get(
+    '/prestamos/historial/usuario/:id',
+    authMiddleware,
+    historialUsuario
+)
+
+
+
 
 // ======================================================
 // ESTADÍSTICAS
