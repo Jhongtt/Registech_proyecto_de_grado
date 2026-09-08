@@ -53,7 +53,7 @@ exports.updateEmpleado = async (id, data) => {
         const existente =
             await empleadosRepository.findByDocumento(documento)
 
-        if (existente && existente.id_empleado !== Number(id)) {
+        if (existente && existente.id_empleado !== String(id)) {
             throw new Error('DUPLICATE')
         }
 

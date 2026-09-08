@@ -51,12 +51,7 @@ const MENU = [
         path: '/settings',
         roles: ['admin', 'soporte', 'inventario']
     },
-    {
-        label: 'Empleados',
-        icon: 'bi-people',
-        path: '/employees',
-        roles: ['admin']
-    },
+   
 ]
 
 export default function Sidebar({

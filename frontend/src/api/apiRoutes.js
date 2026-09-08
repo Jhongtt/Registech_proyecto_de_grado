@@ -96,8 +96,32 @@
     ELIMINAR_EMPLEADO: (id) => `${BASE_URL}/empleados/${id}`,
 
         CAMBIAR_PASSWORD: `${BASE_URL}/usuarios/cambiar-password`,
-        PRESTAMOS: `${BASE_URL}/prestamos`,
-        PRESTAMOS_ACTIVOS: `${BASE_URL}/prestamos/activos`,
+       PRESTAMOS: `${BASE_URL}/prestamos`,
+
+PRESTAMOS_ACTIVOS: `${BASE_URL}/prestamos/activos`,
+
+HISTORIAL_EMPLEADO: (id) =>
+    `${BASE_URL}/prestamos/historial/empleado/${id}`,
+
+HISTORIAL_USUARIO: (id) =>
+    `${BASE_URL}/prestamos/historial/usuario/${id}`,
+
+HISTORIAL_EMPLEADO: (id) =>
+    `${BASE_URL}/prestamos/historial/empleado/${id}`,
+
+HISTORIAL_USUARIO: (id) =>
+    `${BASE_URL}/prestamos/historial/usuario/${id}`,
+
+// ======================================================
+// HISTORIAL DE ENTREGAS PMC
+// ======================================================
+
+PMC_ENTREGAS_EMPLEADO: (id) =>
+    `${BASE_URL}/pmc/entregas/empleado/${id}`,
+
+PMC_ENTREGAS_USUARIO: (id) =>
+    `${BASE_URL}/pmc/entregas/usuario/${id}`,
+
         PRESTAMOS_ACTIVOS_POR_EQUIPO: (num_serie) => `${BASE_URL}/prestamos/activos/${encodeURIComponent(num_serie)}`,
         CREAR_PRESTAMO: `${BASE_URL}/prestamos`,
     DEVOLVER_EQUIPO: (id, num_serie) =>
