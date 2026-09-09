@@ -370,7 +370,7 @@ export default function DashboardAdmin() {
                                             {paginatedLoans.map(p => (
                                                 <tr key={`${p.id_prestamo}-${p.num_serie}`}>
                                                     <td><strong>{p.equipo}</strong><br/><small className="text-muted">{p.num_serie}</small></td>
-                                                    <td>{p.usuario_destino}</td>
+                                                    <td>{p.usuario || p.empleado}</td>
                                                     <td><span className="dept-tag">{p.equipo_area}</span></td>
                                                     <td>{formatDate(p.fecha_prestamo)}</td>
                                                     <td>
