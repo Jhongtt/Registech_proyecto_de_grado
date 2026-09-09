@@ -30,6 +30,7 @@ export default function EquipoCard({ equipo, onPrestamo, onDevolver, vencimiento
     const especificaciones = getEspecificaciones(equipo)
 
     const puedeGestionar = usuario && (usuario.rol === 'admin' || usuario.rol === 'inventario')
+    const puedeReportarDano = usuario && (usuario.rol === 'admin' || usuario.rol === 'soporte')
 
     // ======================================================
     // REINTEGRAR EQUIPO (DE BAJA O EXTRAVIADO A DISPONIBLE)
@@ -141,6 +142,55 @@ export default function EquipoCard({ equipo, onPrestamo, onDevolver, vencimiento
 
     
     // ======================================================
+    // REGISTRAR DAÑO
+    // ======================================================
+
+    const handleReportarDano = async () => {
+        const { value: falla, isConfirmed } = await Swal.fire({
+            icon: 'warning',
+            title: 'Registrar daño',
+            html: `Describe el daño del equipo <strong>${equipo.equipo}</strong> (${equipo.num_serie})`,
+            input: 'textarea',
+            inputPlaceholder: 'Ej. Pantalla rota, no enciende, teclado dañado...',
+            inputAttributes: { maxlength: '500' },
+            inputValidator: (value) =>
+                !value || !value.trim()
+                    ? 'Describe el daño detectado'
+                    : null,
+            showCancelButton: true,
+            confirmButtonText: '<i class="bi bi-cone-striped me-1"></i>Registrar daño',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#64748b'
+        })
+
+        if (!isConfirmed || !falla || !falla.trim()) return
+
+        const formData = new FormData()
+        formData.append('num_serie', equipo.num_serie)
+        formData.append('falla', falla.trim())
+
+        try {
+            const res = await axios.post(API_ROUTES.REPORTE_FALLA, formData)
+            Swal.fire({
+                icon: 'success',
+                title: 'Daño registrado',
+                text: res.data?.mensaje || 'Se creó la orden de soporte para este equipo.',
+                timer: 3000,
+                showConfirmButton: false
+            })
+            setVerDetalle(false)
+            if (onEquipoActualizado) onEquipoActualizado({ ...equipo, estado: 'En mantenimiento' })
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.response?.data?.error || 'No se pudo registrar el daño'
+            })
+        }
+    }
+
+    // ======================================================
     // ACCIONES DEL MODAL
     // ======================================================
 
@@ -182,6 +232,16 @@ export default function EquipoCard({ equipo, onPrestamo, onDevolver, vencimiento
                 >
                     <i className="bi bi-arrow-counterclockwise me-1"></i>
                     Reintegrar Equipo
+                </button>
+            )}
+
+            {(equipo.estado === 'Disponible' || equipo.estado === 'Asignado') && puedeReportarDano && (
+                <button
+                    className="btn btn-outline-danger"
+                    onClick={handleReportarDano}
+                >
+                    <i className="bi bi-cone-striped me-1"></i>
+                    Registrar daño
                 </button>
             )}
         </>
@@ -247,7 +307,7 @@ export default function EquipoCard({ equipo, onPrestamo, onDevolver, vencimiento
                     <div className="mt-auto">
                         <div className="d-flex gap-2 mb-2">
                             <button
-                                className="btn btn-sm btn-primary flex-grow-1"
+                                className="btn btn-sm btn-primary btn-detalle-solid flex-grow-1"
                                 onClick={() => setVerDetalle(true)}
                             >
                                 <i className="bi bi-info-circle me-1"></i>
