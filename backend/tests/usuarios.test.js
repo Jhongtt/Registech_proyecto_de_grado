@@ -82,4 +82,22 @@ describe('POST /api/usuarios (crear)', () => {
             .send({ usuario: 'test' })
         expect(res.status).toBe(400)
     })
+
+    it('debería retornar 409 si el correo ya está registrado', async () => {
+        const res = await request(app)
+            .post('/api/usuarios')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .set('X-CSRF-Token', csrfToken)
+            .set('Cookie', cookies)
+            .send({
+                usuario: 'test_correo_dup',
+                contrasena: 'Test1234!',
+                nombre: 'Correo Duplicado',
+                area: 'Tecnologia',
+                correo: 'admin@registech.com',
+                estado: 'activo'
+            })
+        expect(res.status).toBe(409)
+        expect(res.body.error).toBe('El correo ya está registrado')
+    })
 })

@@ -136,6 +136,7 @@ const RecursosHumanos = () => {
             contrasena: '',
             area: '',
             correo: '',
+            rol: 'inventario',
             estado: 'activo',
             isEditing: false
 
@@ -201,6 +202,7 @@ const RecursosHumanos = () => {
                     contrasena: usuarioSeleccionado.contrasena,
                     area: usuarioSeleccionado.area,
                     correo: usuarioSeleccionado.correo,
+                    rol: usuarioSeleccionado.rol,
                     estado: usuarioSeleccionado.estado
                 }
 
@@ -250,6 +252,9 @@ const RecursosHumanos = () => {
                         'Error al actualizar el usuario'
                     )
 
+                    const detalles =
+                        err.response?.data?.detalles
+
                     Swal.fire({
 
                         icon: 'error',
@@ -257,9 +262,22 @@ const RecursosHumanos = () => {
                         title:
                             'Hubo un error al actualizar el usuario',
 
+                        text:
+                            Array.isArray(detalles) &&
+                            detalles.length > 0
+                                ? detalles
+                                    .slice(0, 3)
+                                    .map(d =>
+                                        d.campo
+                                            ? `${d.campo}: ${d.mensaje}`
+                                            : d.mensaje
+                                    )
+                                    .join('. ')
+                                : 'Verifica los datos ingresados e inténtalo de nuevo',
+
                         showConfirmButton: false,
 
-                        timer: 1500
+                        timer: 3000
 
                     })
 
@@ -267,11 +285,93 @@ const RecursosHumanos = () => {
 
         } else {
 
+            // ==================================================
+            // VALIDACIÓN PREVIA ANTES DE ENVIAR (CREAR)
+            // ==================================================
+
+            const {
+                usuario,
+                nombre,
+                contrasena,
+                area,
+                correo,
+                rol
+            } = usuarioSeleccionado
+
+            if (
+                !nombre?.trim() ||
+                !usuario?.trim() ||
+                !correo?.trim() ||
+                !area?.trim()
+            ) {
+
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Campos requeridos',
+                    text: 'Nombre, usuario, área y correo son obligatorios'
+                })
+
+                return
+
+            }
+
+            if (usuario.trim().length < 3) {
+
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Usuario inválido',
+                    text: 'El usuario debe tener al menos 3 caracteres'
+                })
+
+                return
+
+            }
+
+            const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+            if (!EMAIL_REGEX.test(correo.trim())) {
+
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Correo inválido',
+                    text: 'Ingresa un formato de correo electrónico válido'
+                })
+
+                return
+
+            }
+
+            const PASSWORD_REGEX =
+                /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=[\]{};':"\\|,.<>/?]).{8,}$/
+
+            if (!PASSWORD_REGEX.test(contrasena || '')) {
+
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Contraseña débil',
+                    text: 'Mínimo 8 caracteres, 1 mayúscula, 1 minúscula, 1 número y 1 símbolo (!@#$%^&* etc.)'
+                })
+
+                return
+
+            }
+
             axios.post(
 
                 API_ROUTES.CREAR_USUARIO,
 
-                usuarioSeleccionado
+                {
+
+                    usuario: usuario.trim(),
+                    nombre: nombre.trim(),
+                    contrasena,
+                    area: area.trim(),
+                    correo: correo.trim(),
+                    rol: rol || 'inventario',
+                    estado: usuarioSeleccionado.estado ||
+                        'activo'
+
+                }
 
             )
 
@@ -311,6 +411,13 @@ const RecursosHumanos = () => {
                         'Error al crear el usuario'
                     )
 
+                    const detalles =
+                        err.response?.data?.detalles
+
+                    const textoBase =
+                        err.response?.data?.error ||
+                        'Hubo un problema al crear el usuario'
+
                     Swal.fire({
 
                         icon: 'error',
@@ -319,8 +426,17 @@ const RecursosHumanos = () => {
                             'Error al crear el usuario',
 
                         text:
-                            err.response?.data?.error ||
-                            'Hubo un problema al crear el usuario'
+                            Array.isArray(detalles) &&
+                            detalles.length > 0
+                                ? detalles
+                                    .slice(0, 3)
+                                    .map(d =>
+                                        d.campo
+                                            ? `${d.campo}: ${d.mensaje}`
+                                            : d.mensaje
+                                    )
+                                    .join('. ')
+                                : textoBase
 
                     })
 
@@ -1208,6 +1324,18 @@ const RecursosHumanos = () => {
                                                 }
                                             />
 
+                                            {
+                                                !usuarioSeleccionado.isEditing && (
+                                                    <small
+                                                        className="form-text text-muted"
+                                                    >
+                                                        Mínimo 8 caracteres, 1 mayúscula,
+                                                        1 minúscula, 1 número y 1 símbolo
+                                                        (!@#$%^&* etc.)
+                                                    </small>
+                                                )
+                                            }
+
                                         </div>
 
 
@@ -1306,6 +1434,43 @@ const RecursosHumanos = () => {
 
                                                 <option value="inactivo">
                                                     inactivo
+                                                </option>
+
+                                            </select>
+
+                                        </div>
+
+
+                                        {/* ROL */}
+
+                                        <div className="form-group mb-3">
+
+                                            <label>
+                                                Rol
+                                            </label>
+
+                                            <select
+                                                className="form-control"
+                                                name="rol"
+                                                value={
+                                                    usuarioSeleccionado.rol ||
+                                                    'inventario'
+                                                }
+                                                onChange={
+                                                    handleChange
+                                                }
+                                            >
+
+                                                <option value="inventario">
+                                                    Inventario
+                                                </option>
+
+                                                <option value="soporte">
+                                                    Técnico Mantenimiento
+                                                </option>
+
+                                                <option value="admin">
+                                                    Administrador
                                                 </option>
 
                                             </select>
