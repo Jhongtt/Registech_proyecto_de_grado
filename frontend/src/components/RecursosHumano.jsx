@@ -3,10 +3,15 @@ import axios from "axios"
 import Swal from "sweetalert2"
 import { API_ROUTES } from "../api/apiRoutes"
 
+const AREAS_USUARIOS = [
+    'Administración',
+    'Inventario',
+    'Mantenimiento'
+]
+
 const RecursosHumanos = () => {
 
     const [usuarios, setUsuarios] = useState([])
-    const [areas, setAreas] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
 
@@ -60,32 +65,6 @@ const RecursosHumanos = () => {
                 )
 
                 setLoading(false)
-
-            })
-
-    }, [])
-
-    // ======================================================
-    // OBTENER ÁREAS
-    // ======================================================
-
-    useEffect(() => {
-
-        axios.get(API_ROUTES.OBTENER_AREAS)
-
-            .then(response => {
-
-                setAreas(response.data)
-
-            })
-
-            .catch(err => {
-
-                console.error(err)
-
-                setError(
-                    'Hubo un error al obtener las áreas'
-                )
 
             })
 
@@ -1364,17 +1343,15 @@ const RecursosHumanos = () => {
 
                                                 </option>
 
-                                                {areas.map(
+                                                {AREAS_USUARIOS.map(
                                                     (area, index) => (
 
                                                         <option
                                                             key={index}
-                                                            value={
-                                                                area.area
-                                                            }
+                                                            value={area}
                                                         >
 
-                                                            {area.area}
+                                                            {area}
 
                                                         </option>
 
