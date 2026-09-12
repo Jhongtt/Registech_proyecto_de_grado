@@ -187,7 +187,7 @@ const RecursosHumanos = () => {
 
             )
 
-                .then(response => {
+                .then(() => {
 
                     const updateUsuarios =
                         usuarios.map(usuario =>
@@ -196,8 +196,7 @@ const RecursosHumanos = () => {
                                 usuarioSeleccionado.usuario
 
                                 ? {
-                                    ...usuarioSeleccionado,
-                                    ...response.data
+                                    ...usuarioSeleccionado
                                 }
 
                                 : usuario

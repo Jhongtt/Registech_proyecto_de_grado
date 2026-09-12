@@ -66,9 +66,11 @@ exports.createUsuario = async (req, res) => {
         const auditoriaService = require('../services/auditoriaService')
         await auditoriaService.registrar(req.usuario.usuario, `Creó el usuario ${nuevoUsuario.usuario}`)
         res.status(201).json({
+            id_usuario: nuevoUsuario.id_usuario,
             usuario: nuevoUsuario.usuario,
             nombre: nuevoUsuario.nombre,
             area: nuevoUsuario.area,
+            rol: nuevoUsuario.rol,
             correo: nuevoUsuario.correo,
             estado: nuevoUsuario.estado
         })
