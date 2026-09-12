@@ -8,7 +8,7 @@ let cookies
 beforeAll(async () => {
     const res = await request(app)
         .post('/api/login')
-        .send({ correo: 'admin@registech.com', contrasena: 'admin123' })
+        .send({ correo: 'wolftareas@gmail.com', contrasena: 'Clave*2026' })
     adminToken = res.body.token
     csrfToken = res.body.csrf_token
 
@@ -57,20 +57,25 @@ describe('GET /api/areas', () => {
 
 describe('POST /api/usuarios (crear)', () => {
     it('debería crear o detectar usuario existente', async () => {
+        const usuario = `testuser_${Date.now()}`
         const res = await request(app)
             .post('/api/usuarios')
             .set('Authorization', `Bearer ${adminToken}`)
             .set('X-CSRF-Token', csrfToken)
             .set('Cookie', cookies)
             .send({
-                usuario: 'testuser_e2e',
+                usuario,
                 contrasena: 'Test1234!',
                 nombre: 'Usuario de Prueba',
                 area: 'Tecnologia',
-                correo: 'testuser_e2e@correo.com',
+                correo: `${usuario}@correo.com`,
                 estado: 'activo'
             })
-        expect([200, 201, 409]).toContain(res.status)
+        expect(res.status).toBe(201)
+
+        const db = require('../lib/db')
+        await db.query('DELETE FROM reset_tokens WHERE usuario = $1', [usuario])
+        await db.query('DELETE FROM usuarios WHERE usuario = $1', [usuario])
     })
 
     it('debería rechazar si faltan campos obligatorios', async () => {
@@ -94,7 +99,7 @@ describe('POST /api/usuarios (crear)', () => {
                 contrasena: 'Test1234!',
                 nombre: 'Correo Duplicado',
                 area: 'Tecnologia',
-                correo: 'admin@registech.com',
+                correo: 'wolftareas@gmail.com',
                 estado: 'activo'
             })
         expect(res.status).toBe(409)

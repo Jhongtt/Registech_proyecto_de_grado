@@ -6,11 +6,12 @@ import Swal from 'sweetalert2'
 import { API_ROUTES } from "../api/apiRoutes"
 import { useAuth } from "../context/AuthContext"
 
-// Cuentas de demostración para localizar el correo de cada rol (sin contraseñas).
+// Cuentas del equipo para localizar el correo de cada rol (sin contraseñas).
 const CUENTAS_DEMO = [
-    { rol: 'Administrador', icono: 'bi-shield-lock', correo: 'admin@registech.com' },
-    { rol: 'Técnico Mantenimiento', icono: 'bi-wrench-adjustable', correo: 'soporte@registech.com' },
-    { rol: 'Inventario', icono: 'bi-box-seam', correo: 'inventario@registech.com' },
+    { nombre: 'Jhonatan G.', rol: 'Administrador', icono: 'bi-shield-lock', correo: 'wolftareas@gmail.com' },
+    { nombre: 'Aly S.', rol: 'Administrador', icono: 'bi-shield-lock', correo: 'aly.santiago@registech.com' },
+    { nombre: 'Cesar C.', rol: 'Técnico Mantenimiento', icono: 'bi-wrench-adjustable', correo: 'cesar.cardona@registech.com' },
+    { nombre: 'Narilin B.', rol: 'Inventario', icono: 'bi-box-seam', correo: 'narilin.bustamante@registech.com' },
 ]
 
 function enmascararCorreo(correo) {
@@ -306,7 +307,7 @@ const Login = () => {
                                         </div>
                                         {CUENTAS_DEMO.map((cuenta) => (
                                             <button
-                                                key={cuenta.rol}
+                                                key={cuenta.correo}
                                                 type="button"
                                                 className="demo-dropdown__item"
                                                 onClick={() => {
@@ -316,7 +317,9 @@ const Login = () => {
                                                 disabled={loading}
                                             >
                                                 <span className="demo-dropdown__text">
-                                                    <span className="demo-dropdown__rol">{cuenta.rol}</span>
+                                                    <span className="demo-dropdown__rol">
+                                                        {cuenta.nombre} · {cuenta.rol}
+                                                    </span>
                                                     <span className="demo-dropdown__correo">{cuenta.correo}</span>
                                                 </span>
                                             </button>

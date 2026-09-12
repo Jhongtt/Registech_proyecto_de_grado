@@ -20,26 +20,26 @@ describe('POST /api/login', () => {
     it('debería rechazar contraseña incorrecta', async () => {
         const res = await request(app)
             .post('/api/login')
-            .send({ correo: 'admin@registech.com', contrasena: 'wrongpass' })
+            .send({ correo: 'wolftareas@gmail.com', contrasena: 'wrongpass' })
         expect(res.status).toBe(401)
     })
 
     it('debería retornar token y usuario con credenciales válidas', async () => {
         const res = await request(app)
             .post('/api/login')
-            .send({ correo: 'admin@registech.com', contrasena: 'admin123' })
+            .send({ correo: 'wolftareas@gmail.com', contrasena: 'Clave*2026' })
         expect(res.status).toBe(200)
         expect(res.body.mensaje).toBe('Login exitoso')
         expect(res.body.token).toBeDefined()
         expect(res.body.usuario).toBeDefined()
         expect(res.body.usuario.rol).toBe('admin')
-        expect(res.body.usuario.correo).toBe('admin@registech.com')
+        expect(res.body.usuario.correo).toBe('wolftareas@gmail.com')
     })
 
     it('debería retornar cookie httpOnly con el token', async () => {
         const res = await request(app)
             .post('/api/login')
-            .send({ correo: 'admin@registech.com', contrasena: 'admin123' })
+            .send({ correo: 'wolftareas@gmail.com', contrasena: 'Clave*2026' })
         expect(res.status).toBe(200)
         const cookies = res.headers['set-cookie']
         expect(cookies).toBeDefined()
@@ -51,7 +51,7 @@ describe('POST /api/login', () => {
     it('debería retornar csrf_token', async () => {
         const res = await request(app)
             .post('/api/login')
-            .send({ correo: 'admin@registech.com', contrasena: 'admin123' })
+            .send({ correo: 'wolftareas@gmail.com', contrasena: 'Clave*2026' })
         expect(res.status).toBe(200)
         expect(res.body.csrf_token).toBeDefined()
         expect(typeof res.body.csrf_token).toBe('string')
