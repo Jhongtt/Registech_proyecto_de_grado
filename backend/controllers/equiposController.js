@@ -286,27 +286,10 @@ exports.reporteFalla = async (req, res) => {
         // ==================================================
 
         if (esAdmin) {
-            const usuariosMantenimiento =
-                await prisma.usuarios.findMany({
-                    where: {
-                        rol: 'mantenimiento',
-                        estado: {
-                            equals: 'activo',
-                            mode: 'insensitive'
-                        }
-                    },
-                    select: {
-                        usuario: true
-                    }
-                })
-
-            for (const tecnico of usuariosMantenimiento) {
-                await notificacionesService.crear(
-                    tecnico.usuario,
-                    'mantenimiento',
-                    `La orden ${resultado.id_historial} del equipo ${resultado.num_serie} fue registrada y aprobada automáticamente por el administrador ${usuarioReporta}. Diagnóstico: ${resultado.falla}. Ya puedes realizar la reparación.`
-                )
-            }
+            await notificacionesService.notificarTecnicos(
+                'mantenimiento',
+                `La orden ${resultado.id_historial} del equipo ${resultado.num_serie} fue registrada y aprobada automáticamente por el administrador ${usuarioReporta}. Diagnóstico: ${resultado.falla}. Ya puedes realizar la reparación.`
+            )
         } else {
             await notificacionesService.notificarAdmins(
                 'mantenimiento',
@@ -438,34 +421,13 @@ exports.aprobarRechazarOrden = async (req, res) => {
         }
 
         // ==================================================
-        // BUSCAR PERSONAL DE MANTENIMIENTO
+        // NOTIFICAR AL PERSONAL DE SOPORTE/TÉCNICOS
         // ==================================================
 
-        const usuariosMantenimiento =
-            await prisma.usuarios.findMany({
-                where: {
-                    rol: 'mantenimiento',
-                    estado: {
-                        equals: 'activo',
-                        mode: 'insensitive'
-                    }
-                },
-                select: {
-                    usuario: true
-                }
-            })
-
-        // ==================================================
-        // NOTIFICAR A MANTENIMIENTO
-        // ==================================================
-
-        for (const tecnico of usuariosMantenimiento) {
-            await notificacionesService.crear(
-                tecnico.usuario,
-                'mantenimiento',
-                `La orden ${resultado.id_historial} fue aprobada por ${req.usuario.usuario}. Equipo: ${equipo?.equipo || 'No disponible'}. Número de serie: ${resultado.num_serie}. Diagnóstico: ${resultado.falla}. Ya puedes realizar la reparación.`
-            )
-        }
+        await notificacionesService.notificarTecnicos(
+            'mantenimiento',
+            `La orden ${resultado.id_historial} fue aprobada por ${req.usuario.usuario}. Equipo: ${equipo?.equipo || 'No disponible'}. Número de serie: ${resultado.num_serie}. Diagnóstico: ${resultado.falla}. Ya puedes realizar la reparación.`
+        )
 
         // ==================================================
         // RESPUESTA

@@ -9,9 +9,9 @@ import { useAuth } from "../context/AuthContext"
 // Cuentas del equipo para localizar el correo de cada rol (sin contraseñas).
 const CUENTAS_DEMO = [
     { nombre: 'Jhonatan G.', rol: 'Administrador', icono: 'bi-shield-lock', correo: 'wolftareas@gmail.com' },
-    { nombre: 'Aly S.', rol: 'Administrador', icono: 'bi-shield-lock', correo: 'aly.santiago@registech.com' },
-    { nombre: 'Cesar C.', rol: 'Técnico Mantenimiento', icono: 'bi-wrench-adjustable', correo: 'cesar.cardona@registech.com' },
-    { nombre: 'Narilin B.', rol: 'Inventario', icono: 'bi-box-seam', correo: 'narilin.bustamante@registech.com' },
+    { nombre: 'Aly S.', rol: 'Administrador', icono: 'bi-shield-lock', correo: 'santiago19931916@gmail.com' },
+    { nombre: 'Cesar C.', rol: 'Técnico Mantenimiento', icono: 'bi-wrench-adjustable', correo: 'cesarcar77@gmail.com' },
+    { nombre: 'Narilin B.', rol: 'Inventario', icono: 'bi-box-seam', correo: 'narilin2006@gmail.com' },
 ]
 
 function enmascararCorreo(correo) {
@@ -563,12 +563,12 @@ const Login = () => {
                                         <div className="d-flex justify-content-between align-items-center mt-4">
                                             <button
                                                 type="button"
-                                                className="btn btn-outline-secondary btn-sm"
+                                                className="btn btn-outline-primary btn-sm"
                                                 onClick={() => setPasoRecuperacion(1)}
                                                 disabled={loadingRecuperar}
                                             >
                                                 <i className="bi bi-arrow-left me-1"></i>
-                                                Cambiar Correo
+                                                Volver
                                             </button>
 
                                             <div className="d-flex gap-2">
