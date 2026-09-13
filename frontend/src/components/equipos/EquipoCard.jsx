@@ -465,10 +465,9 @@ export default function EquipoCard({
                 equipo.estado === 'Asignado') &&
                 puedeReportarDano && (
                     <button
-                        className="btn btn-outline-danger"
+                        className="btn btn-danger"
                         onClick={handleReportarDano}
                     >
-                        <i className="bi bi-cone-striped me-1"></i>
                         Registrar daño
                     </button>
                 )}
@@ -476,10 +475,9 @@ export default function EquipoCard({
             {equipo.estado === 'En mantenimiento' &&
                 puedeReportarDano && (
                     <button
-                        className="btn btn-outline-danger"
+                        className="btn btn-danger"
                         onClick={handleCancelarReporte}
                     >
-                        <i className="bi bi-x-circle me-1"></i>
                         Cancelar reporte de daño
                     </button>
                 )}

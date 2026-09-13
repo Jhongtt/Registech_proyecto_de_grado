@@ -1354,7 +1354,7 @@ export default function DashboardAdmin() {
                             <div className="text-end mb-2">
 
                                 <button
-                                    className="btn btn-sm btn-outline-light rounded-pill"
+                                    className="btn btn-sm btn-light rounded-pill"
                                     onClick={() =>
                                         setFotoAmpliada(null)
                                     }
