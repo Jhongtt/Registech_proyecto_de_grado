@@ -1,7 +1,7 @@
 const notificacionesRepository = require('../repository/notificacionesRepository')
 const prisma = require('../lib/prisma')
 
-exports.notificarAdmins = async (tipo, mensaje) => {
+exports.notificarAdmins = async (tipo, mensaje, excluirUsuario = null) => {
     try {
         const administradores = await prisma.usuarios.findMany({
             where: {
@@ -10,6 +10,9 @@ exports.notificarAdmins = async (tipo, mensaje) => {
             }
         })
         for (const admin of administradores) {
+            if (excluirUsuario && admin.usuario === excluirUsuario) {
+                continue;
+            }
             await notificacionesRepository.crear({
                 usuario: admin.usuario,
                 tipo,
