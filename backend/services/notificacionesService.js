@@ -25,6 +25,27 @@ exports.notificarAdmins = async (tipo, mensaje, excluirUsuario = null) => {
 }
 
 
+exports.notificarTecnicos = async (tipo, mensaje) => {
+    try {
+        const tecnicos = await prisma.usuarios.findMany({
+            where: {
+                rol: 'soporte',
+                estado: { equals: 'activo', mode: 'insensitive' }
+            }
+        })
+        for (const tecnico of tecnicos) {
+            await notificacionesRepository.crear({
+                usuario: tecnico.usuario,
+                tipo,
+                mensaje
+            })
+        }
+    } catch (error) {
+        console.error('Error al notificar al personal de soporte:', error)
+    }
+}
+
+
 exports.crear = async (usuario, tipo, mensaje) => {
     if (!usuario || !mensaje) return null
 
