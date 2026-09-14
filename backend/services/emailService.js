@@ -367,12 +367,12 @@ async function verificarConexion() {
     try {
         await transporter.verify()
 
-        console.log('✅ Conexión SMTP con Brevo correcta')
+        console.log(' Conexión SMTP con Brevo correcta')
 
         return true
     } catch (error) {
         console.error(
-            '❌ Error de conexión SMTP:',
+            ' Error de conexión SMTP:',
             error.message
         )
 
