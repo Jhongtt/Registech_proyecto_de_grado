@@ -329,7 +329,8 @@ const resultado =
     } else {
         await notificacionesService.notificarAdmins(
             'mantenimiento',
-            `El usuario ${usuarioReporta} ha reportado una falla en el equipo ${resultado.num_serie}. Diagnóstico: ${resultado.falla}. La orden ${resultado.id_historial} está pendiente de tu aprobación.`
+            `El usuario ${usuarioReporta} ha reportado una falla en el equipo ${resultado.num_serie}. Diagnóstico: ${resultado.falla}. La orden ${resultado.id_historial} está pendiente de tu aprobación.`,
+            req.usuario && req.usuario.usuario
         )
     }
 
@@ -1250,7 +1251,8 @@ exports.reportarEquipoExtraviado = async (req, res) => {
 
         await notificacionesService.notificarAdmins(
             'extravio',
-            `ALERTA: El equipo ${equipo.equipo} (${equipo.num_serie}) no aparece en el área ${equipo.area || 'Sin asignar'}${observaciones ? `. Detalle: ${observaciones}` : ''}.`
+            `ALERTA: El equipo ${equipo.equipo} (${equipo.num_serie}) no aparece en el área ${equipo.area || 'Sin asignar'}${observaciones ? `. Detalle: ${observaciones}` : ''}.`,
+            req.usuario && req.usuario.usuario
         )
 
         await notificacionesService.crear(
@@ -1321,7 +1323,7 @@ exports.cancelarReporte = async (req, res) => {
             prisma.historial_mantenimientos.delete({ where: { id_historial: reporte.id_historial } }),
             prisma.equipos.update({ where: { num_serie }, data: { estado: nuevoEstado } })
         ]);
-        await auditoriaService.registrar(req.usuario.usuario, "Cancel� el reporte de mantenimiento del equipo ${num_serie}");
+        await auditoriaService.registrar(req.usuario.usuario, "Cancel� el reporte de mantenimiento del equipo ${num_serie}");
         res.json({ mensaje: 'Reporte cancelado exitosamente', equipo: { ...equipo, estado: nuevoEstado } });
     } catch (error) {
         console.error('Error al cancelar reporte:', error);

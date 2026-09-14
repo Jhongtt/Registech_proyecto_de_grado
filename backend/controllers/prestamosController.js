@@ -202,7 +202,8 @@ exports.crearPrestamo = async (req, res) => {
 
         await notificacionesService.notificarAdmins(
             'prestamos',
-            `Se registró un préstamo de los equipos ${equipos} al ${destinatario}.`
+            `Se registró un préstamo de los equipos ${equipos} al ${destinatario}.`,
+            req.usuario && req.usuario.usuario
         )
 
 
@@ -353,7 +354,8 @@ exports.devolverPrestamo = async (req, res) => {
 
         await notificacionesService.notificarAdmins(
             'prestamos',
-            `El usuario ${req.usuario.usuario} registró la devolución total del préstamo #${req.params.id}.`
+            `El usuario ${req.usuario.usuario} registró la devolución total del préstamo #${req.params.id}.`,
+            req.usuario && req.usuario.usuario
         )
 
 
@@ -444,7 +446,8 @@ exports.devolverEquipo = async (req, res) => {
 
         await notificacionesService.notificarAdmins(
             'prestamos',
-            `El usuario ${req.usuario.usuario} devolvió el equipo ${req.params.num_serie} del préstamo #${req.params.id}.`
+            `El usuario ${req.usuario.usuario} devolvió el equipo ${req.params.num_serie} del préstamo #${req.params.id}.`,
+            req.usuario && req.usuario.usuario
         )
 
 
