@@ -6,6 +6,7 @@ const rateLimit = require('express-rate-limit')
 const cookieParser = require('cookie-parser')
 const { middlewareCsrf } = require('./middlewares/csrf')
 const notificacionesRoutes = require('./routes/notificaciones')
+const { procesarRecordatorios } = require('./services/recordatoriosService')
 
 const usuariosRoutes = require('./routes/usuarios')
 const areasRoutes = require('./routes/areas')
@@ -173,9 +174,20 @@ app.use((err, req, res, next) => {
 const port = process.env.PORT || 3000
 
 if (process.env.NODE_ENV !== 'test') {
-    app.listen(port, () => {
+
+    app.listen(port, async () => {
+
         console.log(
             `Servidor escuchando en http://localhost:${port}`
+        )
+
+        // Procesar recordatorios al iniciar el servidor
+        await procesarRecordatorios()
+
+        // Revisar recordatorios automáticamente cada 24 horas
+        setInterval(
+            procesarRecordatorios,
+            24 * 60 * 60 * 1000
         )
     })
 }

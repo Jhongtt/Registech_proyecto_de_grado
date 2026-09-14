@@ -37,11 +37,18 @@ exports.crearEquipo = async (datos) => {
             data: {
                 num_serie: datos.num_serie,
                 equipo: datos.equipo,
-                area: datos.area || 'Sin asignar',
+
+                // El equipo se registra sin área asignada
+                area: null,
+
                 descripcion: datos.descripcion || null,
                 sistema_operativo: datos.sistema_operativo || null,
                 imagen: datos.imagen || null,
                 estado: datos.estado,
+
+                // Estos datos solo se asignan cuando se realiza un préstamo
+                responsable: null,
+                fecha_asignacion: null,
 
                 fecha_adquisicion: datos.fecha_adquisicion
                     ? new Date(datos.fecha_adquisicion)
