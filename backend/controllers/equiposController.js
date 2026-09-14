@@ -297,6 +297,14 @@ exports.reporteFalla = async (req, res) => {
             )
         }
 
+    } else {
+        await notificacionesService.notificarAdmins(
+            'mantenimiento',
+            `El usuario ${usuarioReporta} ha reportado una falla en el equipo ${resultado.num_serie}. Diagnóstico: ${resultado.falla}. La orden ${resultado.id_historial} está pendiente de tu aprobación.`,
+            req.usuario && req.usuario.usuario
+        )
+    }
+
         // ==================================================
         // RESPUESTA
         // ==================================================
@@ -1160,7 +1168,8 @@ exports.reportarEquipoExtraviado = async (req, res) => {
 
         await notificacionesService.notificarAdmins(
             'extravio',
-            `ALERTA: El equipo ${equipo.equipo} (${equipo.num_serie}) no aparece en el área ${equipo.area || 'Sin asignar'}${observaciones ? `. Detalle: ${observaciones}` : ''}.`
+            `ALERTA: El equipo ${equipo.equipo} (${equipo.num_serie}) no aparece en el área ${equipo.area || 'Sin asignar'}${observaciones ? `. Detalle: ${observaciones}` : ''}.`,
+            req.usuario && req.usuario.usuario
         )
 
         await notificacionesService.crear(
@@ -1267,6 +1276,7 @@ exports.cancelarReporte = async (req, res) => {
                 : 'Disponible'
 
         await prisma.$transaction([
+
             prisma.historial_mantenimientos.delete({
                 where: {
                     id_historial:
@@ -1298,6 +1308,7 @@ exports.cancelarReporte = async (req, res) => {
                 estado: nuevoEstado
             }
         })
+
     } catch (error) {
         console.error(
             'Error al cancelar reporte:',
