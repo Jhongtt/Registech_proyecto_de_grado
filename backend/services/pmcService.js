@@ -50,7 +50,16 @@ class PMCService {
             );
         }
 
-        return await pmcRepository.update(id, data);
+        const actualizado = {
+            nombre: data.nombre ?? producto.nombre,
+            descripcion: data.descripcion ?? producto.descripcion,
+            cantidad_total: data.cantidad_total ?? producto.cantidad_total,
+            cantidad_disponible:
+                data.cantidad_disponible ??
+                producto.cantidad_disponible
+        };
+
+        return await pmcRepository.update(id, actualizado);
     }
 
     // =========================================================

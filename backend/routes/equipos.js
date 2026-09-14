@@ -1,4 +1,4 @@
-﻿const express = require('express')
+const express = require('express')
 
 const router = express.Router()
 
@@ -12,17 +12,21 @@ const {
     getHistorialMantenimientos,
     getHistorialEquipo,
     resolverReporte,
+    darDeBajaReporte,
     buscarMantenimientos,
     aprobarRechazarOrden,
     actualizarFoto,
     moverEquipo,
     reportarEquipoExtraviado,
     obtenerEvidencia,
-    reintegrarEquipo
+    reintegrarEquipo,
+    cancelarReporte
 } = require('../controllers/equiposController')
 
 const { authMiddleware, requireRol } = require('../middlewares/auth')
+
 const { upload, uploadMemoria } = require('../middlewares/upload')
+
 const { validate } = require('../middlewares/validate')
 
 const {
@@ -64,16 +68,24 @@ router.post(
 router.post(
     '/equipos/:num_serie/liberar',
     authMiddleware,
+    requireRol('admin', 'inventario'),
     liberarEquipo
 )
 
 router.post(
     '/equipos/reporte/add',
     authMiddleware,
-    requireRol('soporte', 'admin'),
+    requireRol('soporte', 'admin', 'inventario'),
     upload.single('foto'),
     validate(reporteFallaSchema),
     reporteFalla
+)
+
+router.delete(
+    '/equipos/:num_serie/reporte/cancelar',
+    authMiddleware,
+    requireRol('soporte', 'admin', 'inventario'),
+    cancelarReporte
 )
 
 router.get(
@@ -100,8 +112,17 @@ router.post(
 router.post(
     '/equipos/reporte/solucion',
     authMiddleware,
+    requireRol('soporte', 'admin'),
     validate(resolverReporteSchema),
     resolverReporte
+)
+
+router.post(
+    '/equipos/reporte/baja',
+    authMiddleware,
+    requireRol('soporte', 'admin'),
+    validate(resolverReporteSchema),
+    darDeBajaReporte
 )
 
 router.post(

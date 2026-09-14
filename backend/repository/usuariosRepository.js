@@ -12,7 +12,7 @@ exports.findByCorreo = async (correo) => {
 
 exports.findAll = async () => {
     const { rows } = await db.query(
-        'SELECT usuario, nombre, area, rol, correo, estado FROM usuarios'
+        'SELECT id_usuario, usuario, nombre, area, rol, correo, estado FROM usuarios'
     )
     return rows
 }
@@ -47,7 +47,7 @@ exports.tienePrestamoActivo = async (usuarioParam) => {
     const { rows } = await db.query(
         `SELECT 1
          FROM prestamos p
-         INNER JOIN usuarios u ON u.id_usuario = p.usuario_destino
+         INNER JOIN usuarios u ON u.id_usuario = p.id_usuario
          WHERE u.usuario = $1
            AND p.estado IN ('activo', 'parcial')
          LIMIT 1`,
@@ -61,7 +61,7 @@ exports.tieneHistorialPrestamos = async (usuarioParam) => {
     const { rows } = await db.query(
         `SELECT 1
          FROM prestamos p
-         INNER JOIN usuarios u ON u.id_usuario = p.usuario_destino
+         INNER JOIN usuarios u ON u.id_usuario = p.id_usuario
          WHERE u.usuario = $1
          LIMIT 1`,
         [usuarioParam]
@@ -106,10 +106,17 @@ exports.delete = async (usuarioParam) => {
 
 exports.createResetToken = async (usuario, codigo, expiraEn) => {
     await db.query('DELETE FROM reset_tokens WHERE usuario = $1', [usuario])
-    const { rows } = await db.query(
-        'INSERT INTO reset_tokens (usuario, codigo, expira_en) VALUES ($1, $2, $3) RETURNING *',
-        [usuario, codigo, expiraEn]
+
+    const minutosValidez = Math.max(
+        1,
+        Math.round((new Date(expiraEn) - Date.now()) / 60000)
     )
+
+    const { rows } = await db.query(
+        'INSERT INTO reset_tokens (usuario, codigo, expira_en) VALUES ($1, $2, NOW() + ($3 * INTERVAL \'1 minute\')) RETURNING *',
+        [usuario, codigo, minutosValidez]
+    )
+
     return rows[0]
 }
 

@@ -362,7 +362,7 @@ body {
   z-index: 50;
 }
 
-.app-header__toggle { color: var(--text-2); text-decoration: none; padding: 0.2rem; }
+.app-header__actions { margin-left: auto; }
 
 .app-header__search { position: relative; align-items: center; }
 .app-header__search i { position: absolute; left: 0.65rem; color: var(--text-3); font-size: 0.85rem; }
@@ -1056,4 +1056,96 @@ code {
   .sidebar { width: var(--sidebar-w-collapsed); }
   .sidebar .sidebar__brand-text, .sidebar .sidebar__link span { display: none; }
   .app-main { margin-left: var(--sidebar-w-collapsed); }
+}
+
+/* ============================================================
+   Botón "Ver detalles" sólido (sin efecto hover)
+   ============================================================ */
+.btn-detalle-solid {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+  color: #fff !important;
+}
+.btn-detalle-solid:hover,
+.btn-detalle-solid:focus,
+.btn-detalle-solid:active {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+  color: #fff !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* ============================================================
+   Footer del sidebar (reducir menú + cerrar sesión)
+   ============================================================ */
+.sidebar__footer { display: flex; flex-direction: column; gap: 0.35rem; }
+
+/* ============================================================
+   Botones outline: visibles desde el inicio (sin depender del hover)
+   ============================================================ */
+.btn-outline-secondary {
+  color: var(--text-2) !important;
+  border-color: #94a3b8 !important;
+}
+[data-theme="dark"] .btn-outline-secondary {
+  color: #cbd5e1 !important;
+  border-color: #64748b !important;
+}
+.btn-outline-secondary:hover:not(:disabled),
+.btn-outline-secondary:active:not(:disabled),
+.btn-outline-secondary:focus:not(:disabled) {
+  color: #fff !important;
+  background-color: #64748b !important;
+  border-color: #64748b !important;
+}
+[data-theme="dark"] .btn-outline-secondary:hover:not(:disabled),
+[data-theme="dark"] .btn-outline-secondary:active:not(:disabled),
+[data-theme="dark"] .btn-outline-secondary:focus:not(:disabled) {
+  background-color: #94a3b8 !important;
+  border-color: #94a3b8 !important;
+}
+
+.btn-outline-danger {
+  color: #dc2626 !important;
+  border-color: #f87171 !important;
+  background-color: #fff !important;
+}
+[data-theme="dark"] .btn-outline-danger {
+  color: #fca5a5 !important;
+  border-color: #dc2626 !important;
+}
+
+.btn-outline-primary {
+  color: var(--brand) !important;
+  border-color: var(--brand) !important;
+}
+[data-theme="dark"] .btn-outline-primary {
+  color: #60a5fa !important;
+  border-color: #3b82f6 !important;
+}
+
+.btn-outline-warning {
+  color: #b45309 !important;
+  border-color: #fcd34d !important;
+}
+[data-theme="dark"] .btn-outline-warning {
+  color: #fbbf24 !important;
+  border-color: #b45309 !important;
+}
+.btn-outline-warning:hover:not(:disabled),
+.btn-outline-warning:active:not(:disabled),
+.btn-outline-warning:focus:not(:disabled) {
+  color: #fff !important;
+  background-color: #d97706 !important;
+  border-color: #d97706 !important;
+}
+
+.btn-outline-success {
+  color: #15803d !important;
+  border-color: #86efac !important;
+}
+[data-theme="dark"] .btn-outline-success {
+  color: #4ade80 !important;
+  border-color: #166534 !important;
 }

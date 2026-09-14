@@ -6,7 +6,7 @@ exports.notificarAdmins = async (tipo, mensaje) => {
         const administradores = await prisma.usuarios.findMany({
             where: {
                 rol: 'admin',
-                estado: 'Activo'
+                estado: { equals: 'activo', mode: 'insensitive' }
             }
         })
         for (const admin of administradores) {
@@ -18,6 +18,27 @@ exports.notificarAdmins = async (tipo, mensaje) => {
         }
     } catch (error) {
         console.error('Error al notificar a administradores:', error)
+    }
+}
+
+
+exports.notificarTecnicos = async (tipo, mensaje) => {
+    try {
+        const tecnicos = await prisma.usuarios.findMany({
+            where: {
+                rol: 'soporte',
+                estado: { equals: 'activo', mode: 'insensitive' }
+            }
+        })
+        for (const tecnico of tecnicos) {
+            await notificacionesRepository.crear({
+                usuario: tecnico.usuario,
+                tipo,
+                mensaje
+            })
+        }
+    } catch (error) {
+        console.error('Error al notificar al personal de soporte:', error)
     }
 }
 

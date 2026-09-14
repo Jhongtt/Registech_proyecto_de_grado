@@ -9,12 +9,18 @@ const MENU = [
         path: '/dashboard',
         roles: ['admin', 'soporte', 'inventario']
     },
-    {
-        label: 'Equipos/Personal',
-        icon: 'bi-pc-display',
-        path: '/equipment',
-        roles: ['admin', 'inventario']
-    },
+   {
+    label: 'Equipos/Personal',
+    icon: 'bi-pc-display',
+    path: '/equipment',
+    roles: ['admin']
+},
+{
+    label: 'Equipos',
+    icon: 'bi-pc-display',
+    path: '/equipment',
+    roles: ['inventario']
+},
     {
         label: 'Préstamos',
         icon: 'bi-arrow-left-right',
@@ -25,7 +31,7 @@ const MENU = [
         label: 'Mantenimiento',
         icon: 'bi-tools',
         path: '/maintenance',
-        roles: ['admin', 'soporte']
+        roles: ['admin', 'soporte', 'inventario']
     },
     {
         label: 'Departamentos',
@@ -136,6 +142,19 @@ export default function Sidebar({
             </nav>
 
             <div className="sidebar__footer">
+                <button
+                    type="button"
+                    className="sidebar__link"
+                    onClick={onToggle}
+                    title={collapsed ? 'Ampliar menú' : 'Reducir menú'}
+                >
+                    <i className={`bi ${collapsed ? 'bi-list' : 'bi-chevron-double-left'} sidebar__icon`}></i>
+
+                    {!collapsed && (
+                        <span>{collapsed ? 'Ampliar' : 'Reducir menú'}</span>
+                    )}
+                </button>
+
                 <button
                     className="sidebar__link sidebar__logout"
                     onClick={handleLogout}
