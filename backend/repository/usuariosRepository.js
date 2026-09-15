@@ -106,10 +106,17 @@ exports.delete = async (usuarioParam) => {
 
 exports.createResetToken = async (usuario, codigo, expiraEn) => {
     await db.query('DELETE FROM reset_tokens WHERE usuario = $1', [usuario])
-    const { rows } = await db.query(
-        'INSERT INTO reset_tokens (usuario, codigo, expira_en) VALUES ($1, $2, $3) RETURNING *',
-        [usuario, codigo, expiraEn]
+
+    const minutosValidez = Math.max(
+        1,
+        Math.round((new Date(expiraEn) - Date.now()) / 60000)
     )
+
+    const { rows } = await db.query(
+        'INSERT INTO reset_tokens (usuario, codigo, expira_en) VALUES ($1, $2, NOW() + ($3 * INTERVAL \'1 minute\')) RETURNING *',
+        [usuario, codigo, minutosValidez]
+    )
+
     return rows[0]
 }
 

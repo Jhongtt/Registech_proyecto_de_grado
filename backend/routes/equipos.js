@@ -68,6 +68,7 @@ router.post(
 router.post(
     '/equipos/:num_serie/liberar',
     authMiddleware,
+    requireRol('admin', 'inventario'),
     liberarEquipo
 )
 

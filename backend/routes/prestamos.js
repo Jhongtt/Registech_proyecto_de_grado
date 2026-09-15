@@ -75,6 +75,7 @@ router.post(
 router.post(
     '/prestamos/:id/equipos/:num_serie/devolver',
     authMiddleware,
+    requireRol('admin', 'inventario'),
     upload.single('evidencia'),
     devolverEquipo
 )

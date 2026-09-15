@@ -63,8 +63,10 @@ export default function EquipoCard({
 
     const puedeReportarDano =
         usuario &&
-        (usuario.rol === 'admin' ||
-            usuario.rol === 'soporte')
+        (
+            usuario.rol === 'admin' ||
+            usuario.rol === 'soporte'
+        )
 
     // ======================================================
     // PRÉSTAMO
@@ -737,12 +739,9 @@ export default function EquipoCard({
                 puedeReportarDano && (
 
                     <button
-                        className="btn btn-outline-danger"
-                        onClick={
-                            handleReportarDano
-                        }
+                        className="btn btn-danger"
+                        onClick={handleReportarDano}
                     >
-                        <i className="bi bi-cone-striped me-1"></i>
                         Registrar daño
                     </button>
 
@@ -752,12 +751,9 @@ export default function EquipoCard({
                 puedeReportarDano && (
 
                     <button
-                        className="btn btn-outline-danger"
-                        onClick={
-                            handleCancelarReporte
-                        }
+                        className="btn btn-danger"
+                        onClick={handleCancelarReporte}
                     >
-                        <i className="bi bi-x-circle me-1"></i>
                         Cancelar reporte de daño
                     </button>
 
@@ -1381,26 +1377,26 @@ export default function EquipoCard({
 
                                     </ul>
 
-                                  <div className="prestamo-modal__ficha-row">
+                                    <div className="prestamo-modal__ficha-row">
 
-    <span>
-        Fecha de registro
-    </span>
+                                        <span>
+                                            Fecha de registro
+                                        </span>
 
-    <strong>
+                                        <strong>
 
-        {unidadDetalle.fecha_adquisicion
-            ? String(
-                unidadDetalle.fecha_adquisicion
-            ).substring(
-                0,
-                10
-            )
-            : 'No registrada'}
+                                            {unidadDetalle.fecha_adquisicion
+                                                ? String(
+                                                    unidadDetalle.fecha_adquisicion
+                                                ).substring(
+                                                    0,
+                                                    10
+                                                )
+                                                : 'No registrada'}
 
-    </strong>
+                                        </strong>
 
-</div>
+                                    </div>
 
                                     {/* ==================================================
                                         HISTORIAL

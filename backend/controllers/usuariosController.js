@@ -66,9 +66,11 @@ exports.createUsuario = async (req, res) => {
         const auditoriaService = require('../services/auditoriaService')
         await auditoriaService.registrar(req.usuario.usuario, `Creó el usuario ${nuevoUsuario.usuario}`)
         res.status(201).json({
+            id_usuario: nuevoUsuario.id_usuario,
             usuario: nuevoUsuario.usuario,
             nombre: nuevoUsuario.nombre,
             area: nuevoUsuario.area,
+            rol: nuevoUsuario.rol,
             correo: nuevoUsuario.correo,
             estado: nuevoUsuario.estado
         })
@@ -76,6 +78,9 @@ exports.createUsuario = async (req, res) => {
         console.error('Error al agregar el usuario:', error)
         if (error.message === 'REQ_FIELDS') return res.status(400).json({ error: 'Todos los campos son obligatorios' })
         if (error.message === 'DUPLICATE') return res.status(409).json({ error: 'El nombre de usuario ya está en uso' })
+        if (error.code === '23505' && String(error.constraint || '').includes('correo')) {
+            return res.status(409).json({ error: 'El correo ya está registrado' })
+        }
 
         res.status(500).json({ error: 'Error al agregar el usuario' })
     }
@@ -89,6 +94,9 @@ exports.updateUsuario = async (req, res) => {
         console.error('Error al editar:', error)
         if (error.message === 'REQ_FIELDS') return res.status(400).json({ error: 'Todos los campos son obligatorios' })
         if (error.code === 'P2025') return res.status(404).json({ error: 'Usuario no encontrado' })
+        if (error.code === '23505' && String(error.constraint || '').includes('correo')) {
+            return res.status(409).json({ error: 'El correo ya está registrado' })
+        }
 
         res.status(500).json({ error: 'Error al editar el usuario' })
     }

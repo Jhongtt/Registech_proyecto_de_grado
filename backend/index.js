@@ -52,7 +52,11 @@ const loginLimiter = rateLimit({
     }
 })
 
-app.use('/api/login', loginLimiter)
+const enModoTest = process.env.NODE_ENV === 'test'
+
+if (!enModoTest) {
+    app.use('/api/login', loginLimiter)
+}
 
 // LIMITE DE INTENTOS PARA RECUPERACION DE CONTRASENA
 const recuperacionLimiter = rateLimit({
@@ -65,8 +69,10 @@ const recuperacionLimiter = rateLimit({
     }
 })
 
-app.use('/api/usuarios/solicitar-recuperacion', recuperacionLimiter)
-app.use('/api/usuarios/restablecer-password', recuperacionLimiter)
+if (!enModoTest) {
+    app.use('/api/usuarios/solicitar-recuperacion', recuperacionLimiter)
+    app.use('/api/usuarios/restablecer-password', recuperacionLimiter)
+}
 
 // CSRF:
 // exempt login, recovery, and health
