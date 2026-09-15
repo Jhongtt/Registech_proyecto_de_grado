@@ -8,7 +8,7 @@ let cookies
 beforeAll(async () => {
     const res = await request(app)
         .post('/api/login')
-        .send({ correo: 'admin@registech.com', contrasena: 'admin123' })
+        .send({ correo: 'wolftareas@gmail.com', contrasena: 'Clave*2026' })
     adminToken = res.body.token
     csrfToken = res.body.csrf_token
 
