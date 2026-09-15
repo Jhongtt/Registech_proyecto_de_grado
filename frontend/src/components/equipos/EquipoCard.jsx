@@ -11,6 +11,7 @@ import { useAuth } from '../../context/AuthContext'
 
 export default function EquipoCard({
     equipo,
+    unidades = [],
     onPrestamo,
     onDevolver,
     vencimiento,
@@ -18,12 +19,22 @@ export default function EquipoCard({
 }) {
     const { usuario } = useAuth()
 
+    const unidadesEquipo =
+        unidades.length > 0
+            ? unidades
+            : [equipo]
+
+    const esGrupo =
+        unidadesEquipo.length > 1
+
     const [verDetalle, setVerDetalle] = useState(false)
     const [historial, setHistorial] = useState([])
     const [mantenimientos, setMantenimientos] = useState([])
     const [historialSeleccionado, setHistorialSeleccionado] = useState(null)
     const [cargandoHistorial, setCargandoHistorial] = useState(false)
     const [errorHistorial, setErrorHistorial] = useState('')
+
+    const [unidadDetalle, setUnidadDetalle] = useState(equipo)
 
     const [currentImagen, setCurrentImagen] = useState(equipo.imagen)
     const [subiendoFoto, setSubiendoFoto] = useState(false)
@@ -43,74 +54,213 @@ export default function EquipoCard({
         )
         : null
 
-    const especificaciones = getEspecificaciones(equipo)
+    const especificaciones =
+        getEspecificaciones(unidadDetalle)
 
     const puedeGestionar =
         usuario &&
-        (usuario.rol === 'admin' || usuario.rol === 'inventario')
+        usuario.rol === 'admin'
 
     const puedeReportarDano =
         usuario &&
-        (usuario.rol === 'admin' || usuario.rol === 'soporte')
+        (usuario.rol === 'admin' ||
+            usuario.rol === 'soporte')
+
+    // ======================================================
+    // PRÉSTAMO
+    // ======================================================
+
+    const handlePrestamo = async () => {
+
+        const disponibles =
+            unidadesEquipo.filter(
+                unidad =>
+                    unidad.estado === 'Disponible'
+            )
+
+        if (disponibles.length === 0) {
+
+            Swal.fire({
+                icon: 'warning',
+                title: 'No hay unidades disponibles',
+                text:
+                    'Todas las unidades de este modelo están asignadas o no disponibles.'
+            })
+
+            return
+        }
+
+        // Si solamente hay una disponible,
+        // se abre directamente el préstamo.
+        if (disponibles.length === 1) {
+
+            onPrestamo(disponibles[0])
+
+            return
+        }
+
+        const opciones = disponibles
+            .map(
+                unidad => `
+                    <option value="${unidad.num_serie}">
+                        ${unidad.num_serie}
+                    </option>
+                `
+            )
+            .join('')
+
+        const { value: numSerie } =
+            await Swal.fire({
+
+                title: 'Seleccionar unidad',
+
+                html: `
+                    <div class="text-start">
+
+                        <label class="form-label">
+                            Selecciona el número de serie
+                            que deseas prestar:
+                        </label>
+
+                        <select
+                            id="unidad-prestamo"
+                            class="form-select"
+                        >
+                            ${opciones}
+                        </select>
+
+                    </div>
+                `,
+
+                showCancelButton: true,
+
+                confirmButtonText:
+                    'Continuar',
+
+                cancelButtonText:
+                    'Cancelar',
+
+                confirmButtonColor:
+                    '#16a34a',
+
+                preConfirm: () => {
+
+                    const select =
+                        document.getElementById(
+                            'unidad-prestamo'
+                        )
+
+                    return select?.value
+                }
+            })
+
+        if (!numSerie) {
+            return
+        }
+
+        const unidadSeleccionada =
+            disponibles.find(
+                unidad =>
+                    unidad.num_serie === numSerie
+            )
+
+        if (unidadSeleccionada) {
+            onPrestamo(unidadSeleccionada)
+        }
+    }
 
     // ======================================================
     // REINTEGRAR EQUIPO
     // ======================================================
 
     const handleReintegrar = async () => {
-        const { isConfirmed } = await Swal.fire({
-            title: '¿Reintegrar equipo?',
-            html: `
-                El equipo <strong>${equipo.equipo}</strong>
-                (${equipo.num_serie}) volverá a estar
-                <span class="text-success fw-bold">Disponible</span>.
-            `,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#16a34a',
-            confirmButtonText:
-                '<i class="bi bi-arrow-counterclockwise me-1"></i>Sí, reintegrar',
-            cancelButtonText: 'Cancelar'
-        })
 
-        if (isConfirmed) {
-            try {
-                const res = await axios.post(
-                    API_ROUTES.REINTEGRAR_EQUIPO(equipo.num_serie)
+        const { isConfirmed } =
+            await Swal.fire({
+
+                title:
+                    '¿Reintegrar equipo?',
+
+                html: `
+                    El equipo
+                    <strong>
+                        ${unidadDetalle.equipo}
+                    </strong>
+                    (${unidadDetalle.num_serie})
+                    volverá a estar
+                    <span class="text-success fw-bold">
+                        Disponible
+                    </span>.
+                `,
+
+                icon: 'question',
+
+                showCancelButton: true,
+
+                confirmButtonColor:
+                    '#16a34a',
+
+                confirmButtonText:
+                    '<i class="bi bi-arrow-counterclockwise me-1"></i>Sí, reintegrar',
+
+                cancelButtonText:
+                    'Cancelar'
+            })
+
+        if (!isConfirmed) {
+            return
+        }
+
+        try {
+
+            const res = await axios.post(
+                API_ROUTES.REINTEGRAR_EQUIPO(
+                    unidadDetalle.num_serie
                 )
+            )
 
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Equipo reintegrado',
-                    text: 'El equipo ahora se encuentra disponible.',
-                    timer: 2500,
-                    showConfirmButton: false
-                })
+            Swal.fire({
+                icon: 'success',
+                title: 'Equipo reintegrado',
+                text:
+                    'El equipo ahora se encuentra disponible.',
+                timer: 2500,
+                showConfirmButton: false
+            })
 
-                if (onEquipoActualizado) {
-                    onEquipoActualizado(res.data.equipo)
-                }
-            } catch (error) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text:
-                        error.response?.data?.error ||
-                        'No se pudo reintegrar el equipo'
-                })
+            if (onEquipoActualizado) {
+
+                onEquipoActualizado(
+                    res.data.equipo
+                )
             }
+
+        } catch (error) {
+
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text:
+                    error.response?.data?.error ||
+                    'No se pudo reintegrar el equipo'
+            })
         }
     }
 
     // ======================================================
-    // CARGAR HISTORIAL DE USO Y MANTENIMIENTOS
+    // CARGAR HISTORIAL
     // ======================================================
 
     useEffect(() => {
-        if (!verDetalle) return
+
+        if (!verDetalle) {
+            return
+        }
 
         const cargarHistorial = async () => {
+
             try {
+
                 setCargandoHistorial(true)
                 setErrorHistorial('')
 
@@ -118,37 +268,50 @@ export default function EquipoCard({
                     responseUso,
                     responseMantenimientos
                 ] = await Promise.all([
+
                     axios.get(
                         API_ROUTES.HISTORIAL_EQUIPO(
-                            equipo.num_serie
+                            unidadDetalle.num_serie
                         )
                     ),
+
                     axios.get(
                         API_ROUTES.HISTORIAL_MANTENIMIENTOS
                     )
                 ])
 
                 setHistorial(
-                    Array.isArray(responseUso.data)
+                    Array.isArray(
+                        responseUso.data
+                    )
                         ? responseUso.data
                         : []
                 )
 
                 const todosLosMantenimientos =
-                    Array.isArray(responseMantenimientos.data)
+                    Array.isArray(
+                        responseMantenimientos.data
+                    )
                         ? responseMantenimientos.data
                         : []
 
                 const mantenimientosEquipo =
                     todosLosMantenimientos.filter(
                         mantenimiento =>
-                            String(mantenimiento.num_serie) ===
-                            String(equipo.num_serie)
+                            String(
+                                mantenimiento.num_serie
+                            ) ===
+                            String(
+                                unidadDetalle.num_serie
+                            )
                     )
 
-                setMantenimientos(mantenimientosEquipo)
+                setMantenimientos(
+                    mantenimientosEquipo
+                )
 
             } catch (error) {
+
                 console.error(
                     'Error al cargar historial del equipo:',
                     error
@@ -157,13 +320,19 @@ export default function EquipoCard({
                 setErrorHistorial(
                     'No se pudo cargar el historial del equipo.'
                 )
+
             } finally {
+
                 setCargandoHistorial(false)
             }
         }
 
         cargarHistorial()
-    }, [verDetalle, equipo.num_serie])
+
+    }, [
+        verDetalle,
+        unidadDetalle.num_serie
+    ])
 
     // ======================================================
     // MANEJO DE FOTOS
@@ -171,40 +340,63 @@ export default function EquipoCard({
 
     const puedeEditarFoto =
         usuario &&
-        (usuario.rol === 'admin' || usuario.rol === 'inventario')
+        (
+            usuario.rol === 'admin' ||
+            usuario.rol === 'inventario'
+        )
 
     const handleFileChange = async (e) => {
-        const file = e.target.files[0]
 
-        if (!file) return
+        const file =
+            e.target.files[0]
+
+        if (!file) {
+            return
+        }
 
         setSubiendoFoto(true)
 
-        const formData = new FormData()
-        formData.append('foto', file)
+        const formData =
+            new FormData()
+
+        formData.append(
+            'foto',
+            file
+        )
 
         try {
-            const res = await axios.patch(
-                API_ROUTES.ACTUALIZAR_FOTO(equipo.num_serie),
-                formData,
-                {
-                    headers: {
-                        'Content-Type': 'multipart/form-data'
+
+            const res =
+                await axios.patch(
+                    API_ROUTES.ACTUALIZAR_FOTO(
+                        unidadDetalle.num_serie
+                    ),
+                    formData,
+                    {
+                        headers: {
+                            'Content-Type':
+                                'multipart/form-data'
+                        }
                     }
-                }
+                )
+
+            setCurrentImagen(
+                res.data.imagen
             )
 
-            setCurrentImagen(res.data.imagen)
-
         } catch (error) {
+
             console.error(
                 'Error al actualizar foto:',
                 error
             )
 
-            alert('Error al actualizar la foto')
+            alert(
+                'Error al actualizar la foto'
+            )
 
         } finally {
+
             setSubiendoFoto(false)
 
             if (fileInputRef.current) {
@@ -214,16 +406,22 @@ export default function EquipoCard({
     }
 
     const handleEliminarFoto = async () => {
-        if (!confirm('¿Seguro que deseas eliminar la foto actual?')) {
+
+        if (
+            !confirm(
+                '¿Seguro que deseas eliminar la foto actual?'
+            )
+        ) {
             return
         }
 
         setSubiendoFoto(true)
 
         try {
+
             await axios.patch(
                 API_ROUTES.ACTUALIZAR_FOTO(
-                    equipo.num_serie
+                    unidadDetalle.num_serie
                 ),
                 {
                     eliminar: 'true'
@@ -233,14 +431,18 @@ export default function EquipoCard({
             setCurrentImagen(null)
 
         } catch (error) {
+
             console.error(
                 'Error al eliminar foto:',
                 error
             )
 
-            alert('Error al eliminar la foto')
+            alert(
+                'Error al eliminar la foto'
+            )
 
         } finally {
+
             setSubiendoFoto(false)
         }
     }
@@ -250,33 +452,55 @@ export default function EquipoCard({
     // ======================================================
 
     const handleReportarDano = async () => {
+
         const {
             value: falla,
             isConfirmed
         } = await Swal.fire({
+
             icon: 'warning',
-            title: 'Registrar daño',
+
+            title:
+                'Registrar daño',
+
             html: `
                 Describe el daño del equipo
-                <strong>${equipo.equipo}</strong>
-                (${equipo.num_serie})
+                <strong>
+                    ${unidadDetalle.equipo}
+                </strong>
+                (${unidadDetalle.num_serie})
             `,
-            input: 'textarea',
+
+            input:
+                'textarea',
+
             inputPlaceholder:
                 'Ej. Pantalla rota, no enciende, teclado dañado...',
+
             inputAttributes: {
                 maxlength: '500'
             },
-            inputValidator: (value) =>
-                !value || !value.trim()
-                    ? 'Describe el daño detectado'
-                    : null,
+
+            inputValidator:
+                (value) =>
+                    !value ||
+                    !value.trim()
+                        ? 'Describe el daño detectado'
+                        : null,
+
             showCancelButton: true,
+
             confirmButtonText:
                 '<i class="bi bi-cone-striped me-1"></i>Registrar daño',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#ef4444',
-            cancelButtonColor: '#64748b'
+
+            cancelButtonText:
+                'Cancelar',
+
+            confirmButtonColor:
+                '#ef4444',
+
+            cancelButtonColor:
+                '#64748b'
         })
 
         if (
@@ -287,11 +511,12 @@ export default function EquipoCard({
             return
         }
 
-        const formData = new FormData()
+        const formData =
+            new FormData()
 
         formData.append(
             'num_serie',
-            equipo.num_serie
+            unidadDetalle.num_serie
         )
 
         formData.append(
@@ -300,10 +525,12 @@ export default function EquipoCard({
         )
 
         try {
-            const res = await axios.post(
-                API_ROUTES.REPORTE_FALLA,
-                formData
-            )
+
+            const res =
+                await axios.post(
+                    API_ROUTES.REPORTE_FALLA,
+                    formData
+                )
 
             Swal.fire({
                 icon: 'success',
@@ -318,13 +545,16 @@ export default function EquipoCard({
             setVerDetalle(false)
 
             if (onEquipoActualizado) {
+
                 onEquipoActualizado({
-                    ...equipo,
-                    estado: 'En mantenimiento'
+                    ...unidadDetalle,
+                    estado:
+                        'En mantenimiento'
                 })
             }
 
         } catch (error) {
+
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
@@ -340,34 +570,53 @@ export default function EquipoCard({
     // ======================================================
 
     const handleCancelarReporte = async () => {
-        const { isConfirmed } = await Swal.fire({
-            icon: 'warning',
-            title: '¿Cancelar reporte?',
-            html: `
-                ¿Estás seguro de que deseas cancelar
-                el reporte de falla del equipo
-                <strong>${equipo.equipo}</strong>?
-                El equipo volverá a estar disponible/asignado.
-            `,
-            showCancelButton: true,
-            confirmButtonText:
-                'Sí, cancelar reporte',
-            cancelButtonText:
-                'No, mantener',
-            confirmButtonColor:
-                '#ef4444',
-            cancelButtonColor:
-                '#64748b'
-        })
 
-        if (!isConfirmed) return
+        const { isConfirmed } =
+            await Swal.fire({
+
+                icon: 'warning',
+
+                title:
+                    '¿Cancelar reporte?',
+
+                html: `
+                    ¿Estás seguro de que deseas cancelar
+                    el reporte de falla del equipo
+                    <strong>
+                        ${unidadDetalle.equipo}
+                    </strong>?
+
+                    El equipo volverá a estar
+                    disponible/asignado.
+                `,
+
+                showCancelButton: true,
+
+                confirmButtonText:
+                    'Sí, cancelar reporte',
+
+                cancelButtonText:
+                    'No, mantener',
+
+                confirmButtonColor:
+                    '#ef4444',
+
+                cancelButtonColor:
+                    '#64748b'
+            })
+
+        if (!isConfirmed) {
+            return
+        }
 
         try {
-            const res = await axios.delete(
-                API_ROUTES.CANCELAR_REPORTE(
-                    equipo.num_serie
+
+            const res =
+                await axios.delete(
+                    API_ROUTES.CANCELAR_REPORTE(
+                        unidadDetalle.num_serie
+                    )
                 )
-            )
 
             Swal.fire({
                 icon: 'success',
@@ -382,9 +631,10 @@ export default function EquipoCard({
             setVerDetalle(false)
 
             if (onEquipoActualizado) {
+
                 onEquipoActualizado(
                     res.data.equipo || {
-                        ...equipo,
+                        ...unidadDetalle,
                         estado:
                             res.data.equipo_estado
                     }
@@ -392,6 +642,7 @@ export default function EquipoCard({
             }
 
         } catch (error) {
+
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
@@ -407,11 +658,36 @@ export default function EquipoCard({
     // ======================================================
 
     const abrirDetalle = () => {
+
+        setUnidadDetalle(
+            unidadesEquipo[0]
+        )
+
         setHistorialSeleccionado(null)
+
         setVerDetalle(true)
     }
 
+    // ======================================================
+    // SELECCIONAR UNIDAD
+    // ======================================================
+
+    const seleccionarUnidad = (unidad) => {
+
+        setUnidadDetalle(unidad)
+
+        setHistorialSeleccionado(null)
+        setHistorial([])
+        setMantenimientos([])
+        setErrorHistorial('')
+    }
+
+    // ======================================================
+    // SELECCIONAR HISTORIAL
+    // ======================================================
+
     const seleccionarHistorial = (tipo) => {
+
         setHistorialSeleccionado(tipo)
     }
 
@@ -421,68 +697,76 @@ export default function EquipoCard({
 
     const AccionesDetalle = (
         <>
-        {equipo.estado === 'Disponible' &&
-    usuario?.rol === 'admin' && (
-        <button
-            className="btn btn-sm btn-success"
-            onClick={() =>
-                onPrestamo(equipo)
-            }
-        >
-            <i className="bi bi-arrow-return-right me-1"></i>
-            Préstamo
-        </button>
-    )}
-            {equipo.estado === 'Asignado' && (
-                <button
-                    className="btn btn-success"
-                    onClick={() => {
-                        setVerDetalle(false)
-                        onDevolver(equipo)
-                    }}
-                >
-                    <i className="bi bi-arrow-return-left me-1"></i>
-                    Registrar Devolución
-                </button>
-            )}
 
-            {(equipo.estado === 'Baja' ||
-                equipo.estado === 'Extraviado') &&
+            {unidadDetalle.estado === 'Disponible' &&
+                usuario?.rol === 'admin' && (
+
+                    <button
+                        className="btn btn-sm btn-success"
+                        onClick={() =>
+                            handlePrestamo()
+                        }
+                    >
+                        <i className="bi bi-arrow-return-right me-1"></i>
+                        Préstamo
+                    </button>
+
+                )}
+
+            {(unidadDetalle.estado === 'Baja' ||
+                unidadDetalle.estado === 'Extraviado') &&
                 puedeGestionar && (
+
                     <button
                         className="btn btn-success"
                         onClick={() => {
+
                             setVerDetalle(false)
+
                             handleReintegrar()
                         }}
                     >
                         <i className="bi bi-arrow-counterclockwise me-1"></i>
                         Reintegrar Equipo
                     </button>
+
                 )}
 
-            {(equipo.estado === 'Disponible' ||
-                equipo.estado === 'Asignado') &&
+            {(unidadDetalle.estado === 'Disponible' ||
+                unidadDetalle.estado === 'Asignado') &&
                 puedeReportarDano && (
+
                     <button
-                        className="btn btn-danger"
-                        onClick={handleReportarDano}
+                        className="btn btn-outline-danger"
+                        onClick={
+                            handleReportarDano
+                        }
                     >
                         Registrar daño
                     </button>
+
                 )}
 
-            {equipo.estado === 'En mantenimiento' &&
+            {unidadDetalle.estado === 'En mantenimiento' &&
                 puedeReportarDano && (
+
                     <button
-                        className="btn btn-danger"
-                        onClick={handleCancelarReporte}
+                        className="btn btn-outline-danger"
+                        onClick={
+                            handleCancelarReporte
+                        }
                     >
                         Cancelar reporte de daño
                     </button>
+
                 )}
+
         </>
     )
+
+    // ======================================================
+    // RENDER
+    // ======================================================
 
     return (
         <>
@@ -497,9 +781,11 @@ export default function EquipoCard({
                         : ''
                 }`}
             >
+
                 <div className="equipo-card__visual">
 
                     {imagen ? (
+
                         <img
                             src={imagen}
                             alt={equipo.equipo}
@@ -510,19 +796,33 @@ export default function EquipoCard({
                                     'none'
                             }}
                         />
+
                     ) : (
+
                         <i className="bi bi-pc-display"></i>
+
                     )}
 
-                    <span
-                        className={`badge equipo-card__badge ${getEstadoClass(
-                            equipo.estado
-                        )}`}
-                    >
-                        {getEstadoLabel(
-                            equipo.estado
-                        )}
-                    </span>
+                    {esGrupo ? (
+
+                        <span className="badge equipo-card__badge text-bg-primary">
+                            {unidadesEquipo.length} unidades
+                        </span>
+
+                    ) : (
+
+                        <span
+                            className={`badge equipo-card__badge ${getEstadoClass(
+                                equipo.estado
+                            )}`}
+                        >
+                            {getEstadoLabel(
+                                equipo.estado
+                            )}
+                        </span>
+
+                    )}
+
                 </div>
 
                 <div className="equipo-card__body d-flex flex-column flex-grow-1">
@@ -537,9 +837,22 @@ export default function EquipoCard({
                             {equipo.area}
                         </span>
 
-                        <code className="equipo-card__ns">
-                            {equipo.num_serie}
-                        </code>
+                        {esGrupo ? (
+
+                            <span className="equipo-card__ns">
+                                {unidadesEquipo.length}{' '}
+                                {unidadesEquipo.length === 1
+                                    ? 'unidad'
+                                    : 'unidades'}
+                            </span>
+
+                        ) : (
+
+                            <code className="equipo-card__ns">
+                                {equipo.num_serie}
+                            </code>
+
+                        )}
 
                     </div>
 
@@ -560,59 +873,59 @@ export default function EquipoCard({
                                 Ver detalles
                             </button>
 
-                           {equipo.estado === 'Disponible' && usuario?.rol === 'admin' && (
+                            {usuario?.rol === 'admin' && (
+
                                 <button
                                     className="btn btn-sm btn-success"
-                                    onClick={() =>
-                                        onPrestamo(equipo)
+                                    onClick={
+                                        handlePrestamo
                                     }
                                 >
                                     <i className="bi bi-arrow-return-right me-1"></i>
                                     Préstamo
                                 </button>
+
                             )}
 
                         </div>
 
-                        {equipo.estado === 'Asignado' && (
-                            <div className="equipo-card__responsable justify-content-between">
+                        {!esGrupo &&
+                            equipo.estado === 'Asignado' && (
 
-                                <span
-                                    className="text-truncate"
-                                    style={{
-                                        maxWidth: '135px'
-                                    }}
-                                >
-                                    <i className="bi bi-person-fill"></i>
+                                <div className="equipo-card__responsable">
 
-                                    {equipo.responsable ||
-                                        'Sin responsable'}
-                                </span>
+                                    <span
+                                        className="text-truncate"
+                                        style={{
+                                            maxWidth:
+                                                '135px'
+                                        }}
+                                    >
 
-                                <button
-                                    className="btn btn-sm btn-success px-2 py-0"
-                                    onClick={() =>
-                                        onDevolver(equipo)
-                                    }
-                                    title="Registrar devolución"
-                                >
-                                    <i className="bi bi-arrow-return-left me-1"></i>
-                                    Devolver
-                                </button>
+                                        <i className="bi bi-person-fill"></i>
 
-                            </div>
-                        )}
+                                        {equipo.responsable ||
+                                            'Sin responsable'}
+
+                                    </span>
+
+                                </div>
+
+                            )}
 
                         {puedeGestionar &&
                             (
                                 equipo.estado === 'Baja' ||
                                 equipo.estado === 'Extraviado'
                             ) && (
+
                                 <div className="d-flex gap-2 mt-2">
 
                                     <button
                                         className="btn btn-sm btn-success w-100"
-                                        onClick={handleReintegrar}
+                                        onClick={
+                                            handleReintegrar
+                                        }
                                         title="Reintegrar al inventario"
                                     >
                                         <i className="bi bi-arrow-counterclockwise me-1"></i>
@@ -620,23 +933,29 @@ export default function EquipoCard({
                                     </button>
 
                                 </div>
+
                             )}
 
-                        {vencimiento && (
-                            <div
-                                className={`small p-1 rounded text-center fw-bold mt-2 ${
-                                    vencimiento.tipo === 'vencido'
-                                        ? 'equipo-card__alerta--vencido'
-                                        : 'equipo-card__alerta--pronto'
-                                }`}
-                            >
-                                {textoAlerta} —{' '}
-                                {vencimiento.fecha.toLocaleDateString()}
-                            </div>
-                        )}
+                        {!esGrupo &&
+                            vencimiento && (
+
+                                <div
+                                    className={`small p-1 rounded text-center fw-bold mt-2 ${
+                                        vencimiento.tipo === 'vencido'
+                                            ? 'equipo-card__alerta--vencido'
+                                            : 'equipo-card__alerta--pronto'
+                                    }`}
+                                >
+                                    {textoAlerta} —{' '}
+                                    {vencimiento.fecha.toLocaleDateString()}
+                                </div>
+
+                            )}
 
                     </div>
+
                 </div>
+
             </div>
 
             {/* ======================================================
@@ -644,6 +963,7 @@ export default function EquipoCard({
             ====================================================== */}
 
             {verDetalle && (
+
                 <div
                     className="modal fade show d-block"
                     role="dialog"
@@ -658,6 +978,7 @@ export default function EquipoCard({
                         setVerDetalle(false)
                     }
                 >
+
                     <div
                         className="modal-dialog modal-dialog-centered"
                         style={{
@@ -667,6 +988,7 @@ export default function EquipoCard({
                             e.stopPropagation()
                         }
                     >
+
                         <div className="modal-content">
 
                             {/* CABECERA */}
@@ -710,20 +1032,25 @@ export default function EquipoCard({
                                     <div className="prestamo-modal__imagen mb-0 flex-shrink-0 position-relative group-hover">
 
                                         {imagen ? (
+
                                             <img
                                                 src={imagen}
-                                                alt={equipo.equipo}
+                                                alt={unidadDetalle.equipo}
                                                 loading="lazy"
                                                 onError={(e) => {
                                                     e.currentTarget.style.display =
                                                         'none'
                                                 }}
                                             />
+
                                         ) : (
+
                                             <i className="bi bi-pc-display"></i>
+
                                         )}
 
                                         {puedeEditarFoto && (
+
                                             <div
                                                 className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-row align-items-center justify-content-center gap-2 bg-dark bg-opacity-50"
                                                 style={{
@@ -751,12 +1078,16 @@ export default function EquipoCard({
                                             >
 
                                                 {subiendoFoto ? (
+
                                                     <div
                                                         className="spinner-border text-light spinner-border-sm"
                                                         role="status"
                                                     ></div>
+
                                                 ) : (
+
                                                     <>
+
                                                         <label
                                                             className="btn btn-light rounded-circle d-flex align-items-center justify-content-center p-0 shadow-sm"
                                                             title="Cambiar foto"
@@ -769,6 +1100,7 @@ export default function EquipoCard({
                                                                     '32px'
                                                             }}
                                                         >
+
                                                             <i
                                                                 className="bi bi-camera"
                                                                 style={{
@@ -788,9 +1120,11 @@ export default function EquipoCard({
                                                                     fileInputRef
                                                                 }
                                                             />
+
                                                         </label>
 
                                                         {imagen && (
+
                                                             <button
                                                                 className="btn btn-danger rounded-circle d-flex align-items-center justify-content-center p-0 shadow-sm"
                                                                 title="Eliminar foto"
@@ -804,6 +1138,7 @@ export default function EquipoCard({
                                                                         '32px'
                                                                 }}
                                                             >
+
                                                                 <i
                                                                     className="bi bi-trash"
                                                                     style={{
@@ -811,12 +1146,17 @@ export default function EquipoCard({
                                                                             '14px'
                                                                     }}
                                                                 ></i>
+
                                                             </button>
+
                                                         )}
+
                                                     </>
+
                                                 )}
 
                                             </div>
+
                                         )}
 
                                     </div>
@@ -824,31 +1164,139 @@ export default function EquipoCard({
                                     <div>
 
                                         <div className="fw-bold fs-5">
-                                            {equipo.equipo}
+                                            {unidadDetalle.equipo}
                                         </div>
 
-                                        <div>
-                                            <span
-                                                className={`badge ${getEstadoClass(
-                                                    equipo.estado
-                                                )}`}
-                                            >
-                                                {getEstadoLabel(
-                                                    equipo.estado
-                                                )}
-                                            </span>
-                                        </div>
+                                        {esGrupo ? (
+
+                                            <div className="mt-1">
+
+                                                <span className="badge text-bg-primary">
+                                                    {unidadesEquipo.length}{' '}
+                                                    unidades
+                                                </span>
+
+                                            </div>
+
+                                        ) : (
+
+                                            <div>
+
+                                                <span
+                                                    className={`badge ${getEstadoClass(
+                                                        unidadDetalle.estado
+                                                    )}`}
+                                                >
+                                                    {getEstadoLabel(
+                                                        unidadDetalle.estado
+                                                    )}
+                                                </span>
+
+                                            </div>
+
+                                        )}
 
                                         <div className="small text-muted mt-1">
-                                            {equipo.area} •{' '}
+
+                                            {unidadDetalle.area}
+                                            {' • '}
                                             <code>
-                                                {equipo.num_serie}
+                                                {unidadDetalle.num_serie}
                                             </code>
+
                                         </div>
 
                                     </div>
 
                                 </div>
+
+                                {/* ==================================================
+                                    UNIDADES DEL MODELO
+                                ================================================== */}
+
+                                {esGrupo && (
+
+                                    <div className="px-4 pt-4">
+
+                                        <div className="fw-bold small text-muted text-uppercase mb-2">
+                                            Unidades de este modelo
+                                        </div>
+
+                                        <div className="d-flex flex-column gap-2">
+
+                                            {unidadesEquipo.map(
+                                                unidad => (
+
+                                                    <button
+                                                        type="button"
+                                                        key={
+                                                            unidad.num_serie
+                                                        }
+                                                        className={`border rounded p-3 text-start ${
+                                                            unidadDetalle.num_serie ===
+                                                            unidad.num_serie
+                                                                ? 'border-primary bg-primary bg-opacity-10'
+                                                                : 'bg-transparent'
+                                                        }`}
+                                                        onClick={() =>
+                                                            seleccionarUnidad(
+                                                                unidad
+                                                            )
+                                                        }
+                                                    >
+
+                                                        <div className="d-flex justify-content-between align-items-center gap-2">
+
+                                                            <div>
+
+                                                                <div className="fw-semibold">
+
+                                                                    <i className="bi bi-pc-display me-2"></i>
+
+                                                                    {unidad.num_serie}
+
+                                                                </div>
+
+                                                                <div className="small text-muted mt-1">
+
+                                                                    {unidad.area ||
+                                                                        'Sin área'}
+
+                                                                    {unidad.responsable
+                                                                        ? ` • ${unidad.responsable}`
+                                                                        : ''}
+
+                                                                </div>
+
+                                                            </div>
+
+                                                            <span
+                                                                className={`badge ${getEstadoClass(
+                                                                    unidad.estado
+                                                                )}`}
+                                                            >
+                                                                {getEstadoLabel(
+                                                                    unidad.estado
+                                                                )}
+                                                            </span>
+
+                                                        </div>
+
+                                                    </button>
+
+                                                )
+                                            )}
+
+                                        </div>
+
+                                        <div className="small text-muted mt-2">
+                                            Selecciona una unidad para consultar
+                                            su información e historial.
+                                        </div>
+
+                                    </div>
+
+                                )}
 
                                 {/* ESTADO ACTUAL */}
 
@@ -864,16 +1312,17 @@ export default function EquipoCard({
 
                                             <span
                                                 className={`badge ${getEstadoClass(
-                                                    equipo.estado
+                                                    unidadDetalle.estado
                                                 )}`}
                                             >
                                                 {getEstadoLabel(
-                                                    equipo.estado
+                                                    unidadDetalle.estado
                                                 )}
                                             </span>
 
                                             <span className="small text-muted">
-                                                Este es el estado actual del equipo.
+                                                Este es el estado actual de la
+                                                unidad seleccionada.
                                             </span>
 
                                         </div>
@@ -892,70 +1341,64 @@ export default function EquipoCard({
 
                                     <ul className="prestamo-modal__specs">
 
-                                        {equipo.sistema_operativo && (
+                                        {unidadDetalle.sistema_operativo && (
+
                                             <li>
+
                                                 <i className="bi bi-windows"></i>
-                                                {equipo.sistema_operativo}
+
+                                                {unidadDetalle.sistema_operativo}
+
                                             </li>
+
                                         )}
 
                                         {especificaciones.map(
                                             (spec, i) => (
+
                                                 <li key={i}>
+
                                                     <i className="bi bi-check2-circle text-success"></i>
+
                                                     {spec}
+
                                                 </li>
+
                                             )
                                         )}
 
                                         {especificaciones.length === 0 &&
-                                            !equipo.sistema_operativo && (
+                                            !unidadDetalle.sistema_operativo && (
+
                                                 <li className="text-muted">
                                                     Sin especificaciones
                                                     registradas
                                                 </li>
+
                                             )}
 
                                     </ul>
 
-                                    <div className="prestamo-modal__ficha-row">
-                                        <span>Responsable</span>
+                                  <div className="prestamo-modal__ficha-row">
 
-                                        <strong>
-                                            {equipo.responsable ||
-                                                'Sin asignar'}
-                                        </strong>
-                                    </div>
+    <span>
+        Fecha de registro
+    </span>
 
-                                    <div className="prestamo-modal__ficha-row">
-                                        <span>Fecha de adquisición</span>
+    <strong>
 
-                                        <strong>
-                                            {equipo.fecha_adquisicion
-                                                ? String(
-                                                    equipo.fecha_adquisicion
-                                                ).substring(
-                                                    0,
-                                                    10
-                                                )
-                                                : 'No registrada'}
-                                        </strong>
-                                    </div>
+        {unidadDetalle.fecha_adquisicion
+            ? String(
+                unidadDetalle.fecha_adquisicion
+            ).substring(
+                0,
+                10
+            )
+            : 'No registrada'}
 
-                                    <div className="prestamo-modal__ficha-row">
-                                        <span>Fecha de asignación</span>
+    </strong>
 
-                                        <strong>
-                                            {equipo.fecha_asignacion
-                                                ? String(
-                                                    equipo.fecha_asignacion
-                                                ).substring(
-                                                    0,
-                                                    10
-                                                )
-                                                : 'No registrada'}
-                                        </strong>
-                                    </div>
+</div>
 
                                     {/* ==================================================
                                         HISTORIAL
@@ -964,18 +1407,20 @@ export default function EquipoCard({
                                     <div className="mt-4 pt-3 border-top">
 
                                         <div className="fw-bold small text-muted text-uppercase mb-3">
-                                            <i className="bi bi-clock-history me-2"></i>
-                                            Historial del equipo
-                                        </div>
 
-                                        {/* BOTONES DEL HISTORIAL */}
+                                            <i className="bi bi-clock-history me-2"></i>
+
+                                            Historial del equipo
+
+                                        </div>
 
                                         <div className="d-flex gap-2">
 
                                             <button
                                                 type="button"
                                                 className={`btn flex-fill ${
-                                                    historialSeleccionado === 'prestamos'
+                                                    historialSeleccionado ===
+                                                    'prestamos'
                                                         ? 'btn-primary'
                                                         : 'btn-outline-primary'
                                                 }`}
@@ -985,14 +1430,18 @@ export default function EquipoCard({
                                                     )
                                                 }
                                             >
+
                                                 <i className="bi bi-arrow-left-right me-2"></i>
+
                                                 Préstamos
+
                                             </button>
 
                                             <button
                                                 type="button"
                                                 className={`btn flex-fill ${
-                                                    historialSeleccionado === 'mantenimientos'
+                                                    historialSeleccionado ===
+                                                    'mantenimientos'
                                                         ? 'btn-warning'
                                                         : 'btn-outline-warning'
                                                 }`}
@@ -1002,33 +1451,37 @@ export default function EquipoCard({
                                                     )
                                                 }
                                             >
+
                                                 <i className="bi bi-tools me-2"></i>
+
                                                 Mantenimientos
+
                                             </button>
 
                                         </div>
 
-                                        {/* MENSAJE INICIAL */}
-
                                         {!cargandoHistorial &&
                                             !errorHistorial &&
                                             !historialSeleccionado && (
+
                                                 <div className="text-center text-muted py-4">
 
                                                     <i className="bi bi-clock-history fs-2 d-block mb-2"></i>
 
                                                     <div className="small">
+
                                                         Selecciona un historial
                                                         para consultar los
                                                         registros del equipo.
+
                                                     </div>
 
                                                 </div>
+
                                             )}
 
-                                        {/* CARGANDO */}
-
                                         {cargandoHistorial && (
+
                                             <div className="text-center py-4">
 
                                                 <div
@@ -1041,16 +1494,20 @@ export default function EquipoCard({
                                                 </div>
 
                                             </div>
-                                        )}
 
-                                        {/* ERROR */}
+                                        )}
 
                                         {!cargandoHistorial &&
                                             errorHistorial && (
+
                                                 <div className="alert alert-danger small mt-3 mb-0">
+
                                                     <i className="bi bi-exclamation-circle me-2"></i>
+
                                                     {errorHistorial}
+
                                                 </div>
+
                                             )}
 
                                         {/* ==================================================
@@ -1059,23 +1516,30 @@ export default function EquipoCard({
 
                                         {!cargandoHistorial &&
                                             !errorHistorial &&
-                                            historialSeleccionado === 'prestamos' && (
+                                            historialSeleccionado ===
+                                                'prestamos' && (
+
                                                 <div className="mt-3">
 
                                                     {historial.length === 0 ? (
+
                                                         <div className="text-center text-muted py-4 border rounded">
 
                                                             <i className="bi bi-clock-history fs-3 d-block mb-2"></i>
 
                                                             <div className="small">
+
                                                                 Este equipo no tiene
                                                                 historial de
                                                                 préstamos
                                                                 registrado.
+
                                                             </div>
 
                                                         </div>
+
                                                     ) : (
+
                                                         <div className="d-flex flex-column gap-3">
 
                                                             {historial.map(
@@ -1089,15 +1553,14 @@ export default function EquipoCard({
                                                                         String(
                                                                             registro.estado
                                                                         ).toLowerCase() ===
-                                                                        'activo'
+                                                                            'activo'
 
                                                                     return (
+
                                                                         <div
                                                                             key={`${registro.id_prestamo}-${index}`}
                                                                             className="border rounded p-3"
                                                                         >
-
-                                                                            {/* USUARIO */}
 
                                                                             <div className="d-flex justify-content-between align-items-start gap-2">
 
@@ -1122,62 +1585,81 @@ export default function EquipoCard({
                                                                                 </div>
 
                                                                                 {estaActivo ? (
+
                                                                                     <span className="badge bg-success">
                                                                                         En uso
                                                                                     </span>
+
                                                                                 ) : (
+
                                                                                     <span className="badge bg-secondary">
                                                                                         Devuelto
                                                                                     </span>
+
                                                                                 )}
 
                                                                             </div>
-
-                                                                            {/* INFORMACIÓN DEL USUARIO */}
 
                                                                             <div className="small mt-3">
 
                                                                                 {registro.correo && (
+
                                                                                     <div className="mb-1">
+
                                                                                         <i className="bi bi-envelope me-2 text-muted"></i>
+
                                                                                         {
                                                                                             registro.correo
                                                                                         }
+
                                                                                     </div>
+
                                                                                 )}
 
                                                                                 {registro.area_usuario && (
+
                                                                                     <div className="mb-1">
+
                                                                                         <i className="bi bi-building me-2 text-muted"></i>
+
                                                                                         {
                                                                                             registro.area_usuario
                                                                                         }
+
                                                                                     </div>
+
                                                                                 )}
 
                                                                                 {registro.rol && (
+
                                                                                     <div>
+
                                                                                         <i className="bi bi-person-badge me-2 text-muted"></i>
+
                                                                                         {
                                                                                             registro.rol
                                                                                         }
+
                                                                                     </div>
+
                                                                                 )}
 
                                                                             </div>
-
-                                                                            {/* FECHAS */}
 
                                                                             <div className="mt-3 pt-2 border-top small">
 
                                                                                 <div className="d-flex justify-content-between">
 
                                                                                     <span className="text-muted">
+
                                                                                         <i className="bi bi-calendar-check me-2"></i>
+
                                                                                         Préstamo
+
                                                                                     </span>
 
                                                                                     <strong>
+
                                                                                         {registro.fecha_prestamo
                                                                                             ? String(
                                                                                                 registro.fecha_prestamo
@@ -1186,6 +1668,7 @@ export default function EquipoCard({
                                                                                                 10
                                                                                             )
                                                                                             : 'No registrada'}
+
                                                                                     </strong>
 
                                                                                 </div>
@@ -1193,11 +1676,15 @@ export default function EquipoCard({
                                                                                 <div className="d-flex justify-content-between mt-2">
 
                                                                                     <span className="text-muted">
+
                                                                                         <i className="bi bi-calendar-x me-2"></i>
+
                                                                                         Devolución
+
                                                                                     </span>
 
                                                                                     <strong>
+
                                                                                         {registro.fecha_devolucion
                                                                                             ? String(
                                                                                                 registro.fecha_devolucion
@@ -1206,32 +1693,39 @@ export default function EquipoCard({
                                                                                                 10
                                                                                             )
                                                                                             : 'Actualmente'}
+
                                                                                     </strong>
 
                                                                                 </div>
 
                                                                             </div>
 
-                                                                            {/* OBSERVACIONES */}
-
                                                                             {registro.observaciones && (
+
                                                                                 <div className="small text-muted mt-3">
+
                                                                                     <i className="bi bi-chat-left-text me-2"></i>
+
                                                                                     {
                                                                                         registro.observaciones
                                                                                     }
+
                                                                                 </div>
+
                                                                             )}
 
                                                                         </div>
+
                                                                     )
                                                                 }
                                                             )}
 
                                                         </div>
+
                                                     )}
 
                                                 </div>
+
                                             )}
 
                                         {/* ==================================================
@@ -1240,22 +1734,30 @@ export default function EquipoCard({
 
                                         {!cargandoHistorial &&
                                             !errorHistorial &&
-                                            historialSeleccionado === 'mantenimientos' && (
+                                            historialSeleccionado ===
+                                                'mantenimientos' && (
+
                                                 <div className="mt-3">
 
-                                                    {mantenimientos.length === 0 ? (
+                                                    {mantenimientos.length ===
+                                                    0 ? (
+
                                                         <div className="text-center text-muted py-4 border rounded">
 
                                                             <i className="bi bi-tools fs-3 d-block mb-2"></i>
 
                                                             <div className="small">
+
                                                                 Este equipo no tiene
                                                                 mantenimientos
                                                                 registrados.
+
                                                             </div>
 
                                                         </div>
+
                                                     ) : (
+
                                                         <div className="d-flex flex-column gap-3">
 
                                                             {mantenimientos.map(
@@ -1263,7 +1765,8 @@ export default function EquipoCard({
 
                                                                     const fueDadoDeBaja =
                                                                         String(
-                                                                            mantenimiento.solucion || ''
+                                                                            mantenimiento.solucion ||
+                                                                                ''
                                                                         )
                                                                             .toLowerCase()
                                                                             .startsWith(
@@ -1276,6 +1779,7 @@ export default function EquipoCard({
                                                                         !mantenimiento.fecha_solucion
 
                                                                     return (
+
                                                                         <div
                                                                             key={
                                                                                 mantenimiento.id_historial
@@ -1286,8 +1790,6 @@ export default function EquipoCard({
                                                                                     : ''
                                                                             }`}
                                                                         >
-
-                                                                            {/* CABECERA */}
 
                                                                             <div className="d-flex justify-content-between align-items-start gap-2 mb-3">
 
@@ -1302,34 +1804,50 @@ export default function EquipoCard({
                                                                                     </div>
 
                                                                                     <div className="small text-muted mt-1 text-break">
+
                                                                                         ID:{' '}
+
                                                                                         {
                                                                                             mantenimiento.id_historial
                                                                                         }
+
                                                                                     </div>
 
                                                                                 </div>
 
                                                                                 {fueDadoDeBaja ? (
+
                                                                                     <span className="badge text-bg-danger">
+
                                                                                         <i className="bi bi-x-octagon me-1"></i>
+
                                                                                         Dado de baja
+
                                                                                     </span>
+
                                                                                 ) : estaPendiente ? (
+
                                                                                     <span className="badge text-bg-warning">
+
                                                                                         <i className="bi bi-hourglass-split me-1"></i>
+
                                                                                         Pendiente
+
                                                                                     </span>
+
                                                                                 ) : (
+
                                                                                     <span className="badge text-bg-success">
+
                                                                                         <i className="bi bi-check-circle me-1"></i>
+
                                                                                         Reparado
+
                                                                                     </span>
+
                                                                                 )}
 
                                                                             </div>
-
-                                                                            {/* FALLA */}
 
                                                                             <div className="mb-3">
 
@@ -1338,22 +1856,24 @@ export default function EquipoCard({
                                                                                 </div>
 
                                                                                 <div className="text-break">
+
                                                                                     {
                                                                                         mantenimiento.falla ||
                                                                                         '-'
                                                                                     }
+
                                                                                 </div>
 
                                                                             </div>
 
-                                                                            {/* SOLUCIÓN */}
-
                                                                             <div className="mb-3">
 
                                                                                 <div className="small text-muted mb-1">
+
                                                                                     {fueDadoDeBaja
                                                                                         ? 'Motivo de baja'
                                                                                         : 'Solución'}
+
                                                                                 </div>
 
                                                                                 <div
@@ -1363,15 +1883,15 @@ export default function EquipoCard({
                                                                                             : 'bg-light'
                                                                                     }`}
                                                                                 >
+
                                                                                     {
                                                                                         mantenimiento.solucion ||
                                                                                         'Sin solución registrada'
                                                                                     }
+
                                                                                 </div>
 
                                                                             </div>
-
-                                                                            {/* INFORMACIÓN */}
 
                                                                             <div className="row g-2 small">
 
@@ -1384,11 +1904,13 @@ export default function EquipoCard({
                                                                                         </div>
 
                                                                                         <strong>
+
                                                                                             {
                                                                                                 mantenimiento.nombre_tecnico ||
                                                                                                 mantenimiento.usuario_tecnico ||
                                                                                                 '-'
                                                                                             }
+
                                                                                         </strong>
 
                                                                                     </div>
@@ -1404,10 +1926,12 @@ export default function EquipoCard({
                                                                                         </div>
 
                                                                                         <strong>
+
                                                                                             {
                                                                                                 mantenimiento.aprobada_por ||
                                                                                                 '-'
                                                                                             }
+
                                                                                         </strong>
 
                                                                                     </div>
@@ -1416,18 +1940,20 @@ export default function EquipoCard({
 
                                                                             </div>
 
-                                                                            {/* FECHAS */}
-
                                                                             <div className="mt-3 pt-2 border-top small">
 
                                                                                 <div className="d-flex justify-content-between">
 
                                                                                     <span className="text-muted">
+
                                                                                         <i className="bi bi-calendar-event me-2"></i>
+
                                                                                         Reporte
+
                                                                                     </span>
 
                                                                                     <strong>
+
                                                                                         {mantenimiento.fecha_reporte
                                                                                             ? String(
                                                                                                 mantenimiento.fecha_reporte
@@ -1436,6 +1962,7 @@ export default function EquipoCard({
                                                                                                 10
                                                                                             )
                                                                                             : '-'}
+
                                                                                     </strong>
 
                                                                                 </div>
@@ -1443,11 +1970,15 @@ export default function EquipoCard({
                                                                                 <div className="d-flex justify-content-between mt-2">
 
                                                                                     <span className="text-muted">
+
                                                                                         <i className="bi bi-calendar-check me-2"></i>
+
                                                                                         Solución
+
                                                                                     </span>
 
                                                                                     <strong>
+
                                                                                         {mantenimiento.fecha_solucion
                                                                                             ? String(
                                                                                                 mantenimiento.fecha_solucion
@@ -1456,6 +1987,7 @@ export default function EquipoCard({
                                                                                                 10
                                                                                             )
                                                                                             : 'Pendiente'}
+
                                                                                     </strong>
 
                                                                                 </div>
@@ -1463,14 +1995,17 @@ export default function EquipoCard({
                                                                             </div>
 
                                                                         </div>
+
                                                                     )
                                                                 }
                                                             )}
 
                                                         </div>
+
                                                     )}
 
                                                 </div>
+
                                             )}
 
                                     </div>
@@ -1498,9 +2033,13 @@ export default function EquipoCard({
                             </div>
 
                         </div>
+
                     </div>
+
                 </div>
+
             )}
+
         </>
     )
 }

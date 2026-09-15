@@ -128,6 +128,9 @@ const Prestamos = () => {
 
     const [datosDevolucion, setDatosDevolucion] = useState({})
 
+    const [enviarCorreoDevolucion, setEnviarCorreoDevolucion] =
+        useState(true)
+
     // =====================================================
     // CARGAR DATOS
     // =====================================================
@@ -386,8 +389,6 @@ const Prestamos = () => {
 
             setIdEmpleadoSeleccionado("")
 
-            // IMPORTANTE:
-            // Se utiliza id_usuario, no usuario
             setIdUsuarioSeleccionado(
                 String(usuario.id_usuario)
             )
@@ -406,10 +407,6 @@ const Prestamos = () => {
 
     const crearPrestamo = async () => {
 
-        // -------------------------------------------------
-        // VALIDAR EQUIPOS
-        // -------------------------------------------------
-
         if (numSeries.length === 0) {
 
             Swal.fire({
@@ -420,10 +417,6 @@ const Prestamos = () => {
 
             return
         }
-
-        // -------------------------------------------------
-        // VALIDAR DESTINATARIO
-        // -------------------------------------------------
 
         if (!usuarioDestino) {
 
@@ -458,10 +451,6 @@ const Prestamos = () => {
                 observaciones.trim() ||
                 `Préstamo del ${fechaInicio} al ${fechaLimite}`
 
-            // -------------------------------------------------
-            // DATOS QUE SE ENVÍAN AL BACKEND
-            // -------------------------------------------------
-
             const datosPrestamo = {
 
                 num_series: numSeries,
@@ -481,7 +470,10 @@ const Prestamos = () => {
                     fechaLimite,
 
                 observaciones:
-                    obsFinal
+                    obsFinal,
+
+                enviarCorreo:
+                    enviarCorreo
             }
 
             console.log(
@@ -635,9 +627,26 @@ const Prestamos = () => {
         })
 
     const ROWS = 8
-    const totalPages = Math.max(1, Math.ceil(filteredPrestamos.length / ROWS))
-    const paginaActual = Math.min(page, totalPages)
-    const prestamosPagina = filteredPrestamos.slice((paginaActual - 1) * ROWS, paginaActual * ROWS)
+    const totalPages =
+        Math.max(
+            1,
+            Math.ceil(
+                filteredPrestamos.length /
+                ROWS
+            )
+        )
+
+    const paginaActual =
+        Math.min(
+            page,
+            totalPages
+        )
+
+    const prestamosPagina =
+        filteredPrestamos.slice(
+            (paginaActual - 1) * ROWS,
+            paginaActual * ROWS
+        )
 
     // =====================================================
     // ABRIR PRÉSTAMO
@@ -662,6 +671,8 @@ const Prestamos = () => {
         setEquiposSeleccionados([])
 
         setDatosDevolucion({})
+
+        setEnviarCorreoDevolucion(true)
     }
 
     // =====================================================
@@ -675,6 +686,8 @@ const Prestamos = () => {
         setEquiposSeleccionados([])
 
         setDatosDevolucion({})
+
+        setEnviarCorreoDevolucion(true)
     }
 
     // =====================================================
@@ -793,7 +806,9 @@ const Prestamos = () => {
 
     const devolverEquipo = async (
         prestamo,
-        equipo
+        equipo,
+        enviarCorreo = false,
+        equiposDevueltosCorreo = []
     ) => {
 
         const numSerie =
@@ -811,7 +826,11 @@ const Prestamos = () => {
                 numSerie,
 
                 equipo:
-                    nombreEquipo
+                    nombreEquipo,
+
+                enviarCorreo,
+
+                equiposDevueltosCorreo
             }
         )
 
@@ -856,6 +875,22 @@ const Prestamos = () => {
                 datos.evidencia
             )
         }
+
+        // ==============================================
+        // CORREO DE DEVOLUCIÓN
+        // ==============================================
+
+        formData.append(
+            "enviarCorreo",
+            String(enviarCorreo)
+        )
+
+        formData.append(
+            "equiposDevueltosCorreo",
+            JSON.stringify(
+                equiposDevueltosCorreo
+            )
+        )
 
         try {
 
@@ -982,14 +1017,32 @@ const Prestamos = () => {
 
             let exitosos = 0
 
+            const seriesSeleccionadas =
+                seleccionados
+                    .map(equipo =>
+                        obtenerNumeroSerie(equipo)
+                    )
+                    .filter(Boolean)
+
             for (
-                const equipo of seleccionados
+                let i = 0;
+                i < seleccionados.length;
+                i++
             ) {
+
+                const equipo =
+                    seleccionados[i]
+
+                const esUltimaDevolucion =
+                    i === seleccionados.length - 1
 
                 const resultadoDevolucion =
                     await devolverEquipo(
                         prestamoSeleccionado,
-                        equipo
+                        equipo,
+                        enviarCorreoDevolucion &&
+                        esUltimaDevolucion,
+                        seriesSeleccionadas
                     )
 
                 if (
@@ -1010,8 +1063,10 @@ const Prestamos = () => {
                     icon: "success",
                     title: "Devolución registrada",
                     text:
-                        "Los equipos fueron devueltos correctamente.",
-                    timer: 2000,
+                        enviarCorreoDevolucion
+                            ? "Los equipos fueron devueltos correctamente y se envió el comprobante por correo."
+                            : "Los equipos fueron devueltos correctamente.",
+                    timer: 2500,
                     showConfirmButton:
                         false
                 })
@@ -1144,14 +1199,32 @@ const Prestamos = () => {
 
             let exitosos = 0
 
+            const seriesEquipos =
+                equipos
+                    .map(equipo =>
+                        obtenerNumeroSerie(equipo)
+                    )
+                    .filter(Boolean)
+
             for (
-                const equipo of equipos
+                let i = 0;
+                i < equipos.length;
+                i++
             ) {
+
+                const equipo =
+                    equipos[i]
+
+                const esUltimaDevolucion =
+                    i === equipos.length - 1
 
                 const resultadoDevolucion =
                     await devolverEquipo(
                         prestamoSeleccionado,
-                        equipo
+                        equipo,
+                        enviarCorreoDevolucion &&
+                        esUltimaDevolucion,
+                        seriesEquipos
                     )
 
                 if (
@@ -1173,8 +1246,10 @@ const Prestamos = () => {
                     title:
                         "Préstamo devuelto",
                     text:
-                        "Todos los equipos fueron devueltos correctamente.",
-                    timer: 2000,
+                        enviarCorreoDevolucion
+                            ? "Todos los equipos fueron devueltos correctamente y se envió el comprobante por correo."
+                            : "Todos los equipos fueron devueltos correctamente.",
+                    timer: 2500,
                     showConfirmButton:
                         false
                 })
@@ -1276,6 +1351,15 @@ const Prestamos = () => {
                 )
             }
         ).length
+
+    // =====================================================
+    // CORREO DEL PRÉSTAMO SELECCIONADO
+    // =====================================================
+
+    const correoDevolucion =
+        prestamoSeleccionado?.correo_empleado ||
+        prestamoSeleccionado?.correo_usuario ||
+        null
 
     // =====================================================
     // RENDER
@@ -1566,7 +1650,12 @@ const Prestamos = () => {
 
                 </div>
 
-                <Paginador page={paginaActual} setPage={setPage} totalItems={filteredPrestamos.length} size={ROWS} />
+                <Paginador
+                    page={paginaActual}
+                    setPage={setPage}
+                    totalItems={filteredPrestamos.length}
+                    size={ROWS}
+                />
 
             </div>
 
@@ -1712,6 +1801,62 @@ const Prestamos = () => {
                                 </div>
 
                                 {/* =========================================
+                                    CORREO DE DEVOLUCIÓN
+                                ========================================= */}
+
+                                <div className="form-check mb-3">
+
+                                    <input
+                                        className="form-check-input"
+                                        type="checkbox"
+                                        id="checkCorreoDevolucion"
+                                        checked={
+                                            enviarCorreoDevolucion
+                                        }
+                                        onChange={e =>
+                                            setEnviarCorreoDevolucion(
+                                                e.target.checked
+                                            )
+                                        }
+                                    />
+
+                                    <label
+                                        className="form-check-label small"
+                                        htmlFor="checkCorreoDevolucion"
+                                    >
+
+                                        Enviar comprobante de devolución por correo electrónico
+
+                                    </label>
+
+                                    {correoDevolucion && (
+
+                                        <div className="small text-muted ps-1 mt-1">
+
+                                            Correo:
+                                            {" "}
+
+                                            <strong>
+                                                {correoDevolucion}
+                                            </strong>
+
+                                        </div>
+
+                                    )}
+
+                                    {!correoDevolucion && (
+
+                                        <div className="small text-danger ps-1 mt-1">
+
+                                            El destinatario no tiene un correo registrado.
+
+                                        </div>
+
+                                    )}
+
+                                </div>
+
+                                {/* =========================================
                                     LISTA DE EQUIPOS
                                 ========================================= */}
 
@@ -1745,10 +1890,11 @@ const Prestamos = () => {
                                                     numSerie ||
                                                     `equipo-${index}`
                                                 }
-                                                className={`border rounded p-3 mb-3 ${seleccionado
-                                                    ? "border-success bg-light"
-                                                    : ""
-                                                    }`}
+                                                className={`border rounded p-3 mb-3 ${
+                                                    seleccionado
+                                                        ? "border-success bg-light"
+                                                        : ""
+                                                }`}
                                             >
 
                                                 <div className="d-flex align-items-start gap-3">
@@ -2191,10 +2337,6 @@ const Prestamos = () => {
                                                 Seleccionar usuario o empleado...
                                             </option>
 
-                                            {/* =================================
-                                                USUARIOS DEL SISTEMA
-                                            ================================= */}
-
                                             <optgroup label="Usuarios">
 
                                                 {usuarios.map(u => (
@@ -2216,10 +2358,6 @@ const Prestamos = () => {
                                                 ))}
 
                                             </optgroup>
-
-                                            {/* =================================
-                                                EMPLEADOS
-                                            ================================= */}
 
                                             <optgroup label="Empleados">
 
@@ -2399,10 +2537,6 @@ const Prestamos = () => {
                                 </form>
 
                             </div>
-
-                            {/* =========================================
-                                FOOTER
-                            ========================================= */}
 
                             <div className="modal-footer">
 

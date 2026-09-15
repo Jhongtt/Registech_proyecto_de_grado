@@ -11,8 +11,10 @@ import { useAuth } from "../context/AuthContext"
 
 const Equipos = ({ usuario }) => {
     const { usuario: usuarioAuth } = useAuth()
+
     const esAdmin = usuarioAuth?.rol === 'admin'
     const esInventario = usuarioAuth?.rol === 'inventario'
+
     console.log('ROL ACTUAL:', usuarioAuth?.rol)
 
     const [equipos, setEquipos] = useState([])
@@ -34,6 +36,10 @@ const Equipos = ({ usuario }) => {
 
     const location = useLocation()
 
+    // ======================================================
+    // CARGAR DATOS
+    // ======================================================
+
     const cargarDatos = useCallback(() => {
         setLoading(true)
         setError(null)
@@ -45,12 +51,19 @@ const Equipos = ({ usuario }) => {
             axios.get(API_ROUTES.PRESTAMOS_ACTIVOS)
         ])
             .then(([resEquipos, resUsuarios, resAreas, resPrestamos]) => {
-                setEquipos(resEquipos.data)
+
+                setEquipos(
+                    Array.isArray(resEquipos.data)
+                        ? resEquipos.data
+                        : []
+                )
 
                 setUsuarios(
                     Array.isArray(resUsuarios.data)
                         ? resUsuarios.data.filter(
-                            u => (u.estado || '').toLowerCase() === 'activo'
+                            u =>
+                                (u.estado || '').toLowerCase() ===
+                                'activo'
                         )
                         : []
                 )
@@ -68,27 +81,36 @@ const Equipos = ({ usuario }) => {
                 )
 
                 // Cargar empleados por separado
-               axios.get(API_ROUTES.OBTENER_EMPLEADOS)
-    .then(res => {
-        setEmpleados(
-            Array.isArray(res.data)
-                ? res.data.filter(
-                    e => (e.estado || '').toLowerCase() === 'activo'
-                )
-                : []
-        )
-    })
-    .catch(err => {
-        console.error(
-            'Error al cargar empleados en Equipos:',
-            err
-        )
-        setEmpleados([])
-    })
+                axios.get(API_ROUTES.OBTENER_EMPLEADOS)
+                    .then(res => {
+                        setEmpleados(
+                            Array.isArray(res.data)
+                                ? res.data.filter(
+                                    e =>
+                                        (e.estado || '').toLowerCase() ===
+                                        'activo'
+                                )
+                                : []
+                        )
+                    })
+                    .catch(err => {
+                        console.error(
+                            'Error al cargar empleados en Equipos:',
+                            err
+                        )
+
+                        setEmpleados([])
+                    })
             })
             .catch(err => {
-                console.error('Error al cargar datos de equipos:', err)
-                setError('Hubo un error al obtener los equipos')
+                console.error(
+                    'Error al cargar datos de equipos:',
+                    err
+                )
+
+                setError(
+                    'Hubo un error al obtener los equipos'
+                )
             })
             .finally(() => {
                 setLoading(false)
@@ -99,17 +121,30 @@ const Equipos = ({ usuario }) => {
         cargarDatos()
     }, [location.pathname, cargarDatos])
 
+    // ======================================================
+    // CARGANDO
+    // ======================================================
+
     if (loading) {
         return (
             <div className="text-center py-5 text-secondary">
+
                 <div
                     className="spinner-border text-primary mb-2"
                     role="status"
                 ></div>
-                <div>Cargando equipos...</div>
+
+                <div>
+                    Cargando equipos...
+                </div>
+
             </div>
         )
     }
+
+    // ======================================================
+    // ERROR
+    // ======================================================
 
     if (error) {
         return (
@@ -119,44 +154,104 @@ const Equipos = ({ usuario }) => {
         )
     }
 
+    // ======================================================
+    // FILTRO DE EQUIPOS
+    // ======================================================
+
     const filteredEquipos = equipos.filter(equipo => {
+
+        const texto = filter.toLowerCase()
+
         const matchTexto =
-            equipo.num_serie?.toLowerCase().includes(filter.toLowerCase()) ||
-            equipo.responsable?.toLowerCase().includes(filter.toLowerCase()) ||
-            equipo.equipo?.toLowerCase().includes(filter.toLowerCase())
+            equipo.num_serie
+                ?.toLowerCase()
+                .includes(texto) ||
+
+            equipo.responsable
+                ?.toLowerCase()
+                .includes(texto) ||
+
+            equipo.equipo
+                ?.toLowerCase()
+                .includes(texto)
 
         const matchEstado =
-            !filtroEstado || equipo.estado === filtroEstado
+            !filtroEstado ||
+            equipo.estado === filtroEstado
 
         return matchTexto && matchEstado
     })
+
+    // ======================================================
+    // AGRUPAR EQUIPOS POR MODELO
+    // ======================================================
+
+    const gruposEquipos = Object.values(
+        filteredEquipos.reduce((grupos, equipo) => {
+
+            const nombreModelo =
+                equipo.equipo?.trim() ||
+                'Equipo sin modelo'
+
+            const clave =
+                nombreModelo.toLowerCase()
+
+            if (!grupos[clave]) {
+                grupos[clave] = {
+                    modelo: nombreModelo,
+                    unidades: []
+                }
+            }
+
+            grupos[clave].unidades.push(equipo)
+
+            return grupos
+
+        }, {})
+    )
+
+    // ======================================================
+    // PAGINACIÓN
+    // ======================================================
 
     const ROWS = 6
 
     const totalPages = Math.max(
         1,
-        Math.ceil(filteredEquipos.length / ROWS)
+        Math.ceil(gruposEquipos.length / ROWS)
     )
 
-    const paginaActual = Math.min(page, totalPages)
+    const paginaActual = Math.min(
+        page,
+        totalPages
+    )
 
-    const equiposPagina = filteredEquipos.slice(
+    const gruposPagina = gruposEquipos.slice(
         (paginaActual - 1) * ROWS,
         paginaActual * ROWS
     )
 
+    // ======================================================
+    // OBTENER VENCIMIENTO
+    // ======================================================
+
     const getVencimiento = (numSerie) => {
-        const prestamo = prestamosActivos.find(
-            p => p.num_serie === numSerie
-        )
+
+        const prestamo =
+            prestamosActivos.find(
+                p => p.num_serie === numSerie
+            )
 
         const fechaDev =
             prestamo?.fecha_devolucion_programada ||
             prestamo?.fecha_devolucion
 
-        if (!fechaDev) return null
+        if (!fechaDev) {
+            return null
+        }
 
         const hoy = new Date()
+
         hoy.setHours(0, 0, 0, 0)
 
         const limite = new Date(
@@ -186,15 +281,29 @@ const Equipos = ({ usuario }) => {
         return null
     }
 
+    // ======================================================
+    // ABRIR MODAL DE PRÉSTAMO
+    // ======================================================
+
     const abrirModalPrestamo = (equipo) => {
-        setEquipoSeleccionado({ ...equipo })
+
+        setEquipoSeleccionado({
+            ...equipo
+        })
+
         setModalPrestamo(true)
     }
 
+    // ======================================================
+    // DEVOLVER EQUIPO
+    // ======================================================
+
     const devolverEquipo = async (equipo) => {
+
         let prestamo
 
         try {
+
             const res = await axios.get(
                 API_ROUTES.PRESTAMOS_ACTIVOS_POR_EQUIPO(
                     equipo.num_serie
@@ -202,7 +311,9 @@ const Equipos = ({ usuario }) => {
             )
 
             prestamo = res.data
+
         } catch {
+
             Swal.fire({
                 icon: 'warning',
                 title: 'Sin préstamo activo',
@@ -218,35 +329,43 @@ const Equipos = ({ usuario }) => {
                     '<i class="bi bi-unlock me-1"></i>Liberar equipo',
                 cancelButtonText: 'Cancelar',
                 confirmButtonColor: '#2563eb'
-            }).then(result => {
-                if (!result.isConfirmed) return
-
-                axios.post(
-                    API_ROUTES.LIBERAR_EQUIPO(
-                        equipo.num_serie
-                    )
-                )
-                    .then(() => {
-                        cargarDatos()
-
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Equipo liberado',
-                            text: `${equipo.equipo} está disponible nuevamente`,
-                            timer: 2500,
-                            showConfirmButton: false
-                        })
-                    })
-                    .catch(err => {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error al liberar',
-                            text:
-                                err.response?.data?.error ||
-                                'Hubo un error al liberar el equipo'
-                        })
-                    })
             })
+                .then(result => {
+
+                    if (!result.isConfirmed) {
+                        return
+                    }
+
+                    axios.post(
+                        API_ROUTES.LIBERAR_EQUIPO(
+                            equipo.num_serie
+                        )
+                    )
+                        .then(() => {
+
+                            cargarDatos()
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Equipo liberado',
+                                text:
+                                    `${equipo.equipo} está disponible nuevamente`,
+                                timer: 2500,
+                                showConfirmButton: false
+                            })
+                        })
+                        .catch(err => {
+
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error al liberar',
+                                text:
+                                    err.response?.data?.error ||
+                                    'Hubo un error al liberar el equipo'
+                            })
+
+                        })
+                })
 
             return
         }
@@ -266,89 +385,140 @@ const Equipos = ({ usuario }) => {
                 '<i class="bi bi-arrow-return-left me-1"></i>Sí, devolver',
             cancelButtonText: 'Cancelar',
             confirmButtonColor: '#16a34a'
-        }).then(result => {
-            if (!result.isConfirmed) return
-
-            axios.post(
-                API_ROUTES.DEVOLVER_EQUIPO(
-                    prestamo.id_prestamo,
-                    equipo.num_serie
-                )
-            )
-                .then(() => {
-                    cargarDatos()
-
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Devolución registrada',
-                        text: `${equipo.equipo} está disponible nuevamente`,
-                        timer: 2500,
-                        showConfirmButton: false
-                    })
-                })
-                .catch(err => {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error al devolver',
-                        text:
-                            err.response?.data?.error ||
-                            'Hubo un error al registrar la devolución'
-                    })
-                })
         })
+            .then(result => {
+
+                if (!result.isConfirmed) {
+                    return
+                }
+
+                axios.post(
+                    API_ROUTES.DEVOLVER_EQUIPO(
+                        prestamo.id_prestamo,
+                        equipo.num_serie
+                    )
+                )
+                    .then(() => {
+
+                        cargarDatos()
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Devolución registrada',
+                            text:
+                                `${equipo.equipo} está disponible nuevamente`,
+                            timer: 2500,
+                            showConfirmButton: false
+                        })
+
+                    })
+                    .catch(err => {
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error al devolver',
+                            text:
+                                err.response?.data?.error ||
+                                'Hubo un error al registrar la devolución'
+                        })
+
+                    })
+            })
     }
 
+    // ======================================================
+    // PRÉSTAMO CONFIRMADO
+    // ======================================================
+
     const handlePrestamoConfirmado = async () => {
+
         setModalPrestamo(false)
+
         cargarDatos()
     }
 
+    // ======================================================
+    // EQUIPO REGISTRADO
+    // ======================================================
+
     const handleEquipoRegistrado = (nuevoEquipo) => {
+
         setModalRegistro(false)
-        setEquipos(prev => [nuevoEquipo, ...prev])
+
+        setEquipos(prev => [
+            nuevoEquipo,
+            ...prev
+        ])
     }
 
-    const handleEquipoActualizado = (equipo) => {
+    // ======================================================
+    // EQUIPO ACTUALIZADO
+    // ======================================================
+
+    const handleEquipoActualizado = (equipoActualizado) => {
+
         setEquipos(prev =>
             prev.map(e =>
-                e.num_serie === equipo.num_serie
-                    ? equipo
+                e.num_serie === equipoActualizado.num_serie
+                    ? equipoActualizado
                     : e
             )
         )
     }
 
+    // ======================================================
+    // RENDER
+    // ======================================================
+
     return (
         <div className="card">
+
             <div className="card-body">
 
+                {/* ==================================================
+                    ENCABEZADO
+                ================================================== */}
+
                 <div className="module-header">
+
                     <h4 className="module-title mb-0">
                         Inventario de Equipos
                     </h4>
 
                     <div className="d-flex gap-2 align-items-center">
+
                         <span className="badge text-bg-primary">
-                            {equipos.length} registros
+                            {gruposEquipos.length} modelos
                         </span>
 
                         {(esAdmin || esInventario) && (
                             <button
                                 className="btn btn-sm btn-success rounded-pill"
-                                onClick={() => setModalRegistro(true)}
+                                onClick={() =>
+                                    setModalRegistro(true)
+                                }
                             >
                                 <i className="bi bi-plus-lg me-1"></i>
                                 Agregar Equipo
                             </button>
                         )}
+
                     </div>
+
                 </div>
 
+                {/* ==================================================
+                    FILTROS
+                ================================================== */}
+
                 <div className="mb-3">
+
                     <div className="row g-2">
 
                         <div className="col-md-8">
+
                             <div className="input-group">
+
                                 <span className="input-group-text">
                                     <i className="bi bi-search"></i>
                                 </span>
@@ -356,23 +526,29 @@ const Equipos = ({ usuario }) => {
                                 <input
                                     type="text"
                                     className="form-control"
-                                    placeholder="Buscar por numero de serie, equipo o responsable..."
+                                    placeholder="Buscar por número de serie, equipo o responsable..."
                                     value={filter}
-                                    onChange={(e) =>
+                                    onChange={(e) => {
                                         setFilter(e.target.value)
-                                    }
+                                        setPage(1)
+                                    }}
                                 />
+
                             </div>
+
                         </div>
 
                         <div className="col-md-4">
+
                             <select
                                 className="form-select"
                                 value={filtroEstado}
-                                onChange={(e) =>
+                                onChange={(e) => {
                                     setFiltroEstado(e.target.value)
-                                }
+                                    setPage(1)
+                                }}
                             >
+
                                 <option value="">
                                     Todos los estados
                                 </option>
@@ -389,83 +565,141 @@ const Equipos = ({ usuario }) => {
                                     En mantenimiento
                                 </option>
 
-
-                    
-
                                 <option value="Baja">
                                     Baja
                                 </option>
+
                             </select>
+
                         </div>
 
                     </div>
+
                 </div>
 
-                {filteredEquipos.length === 0 ? (
+                {/* ==================================================
+                    TARJETAS AGRUPADAS
+                ================================================== */}
+
+                {gruposEquipos.length === 0 ? (
+
                     <div className="empty-state">
+
                         <p className="text-muted my-3">
                             No se encontraron equipos
                         </p>
+
                     </div>
+
                 ) : (
+
                     <div className="row g-3">
-                        {equiposPagina.map(equipo => (
-                            <div
-                                className="col-xl-4 col-md-6"
-                                key={equipo.num_serie}
-                            >
-                                <EquipoCard
-                                    equipo={equipo}
-                                    onPrestamo={abrirModalPrestamo}
-                                    onDevolver={devolverEquipo}
-                                    vencimiento={getVencimiento(
-                                        equipo.num_serie
-                                    )}
-                                    areas={areas}
-                                    onEquipoActualizado={
-                                        handleEquipoActualizado
+
+                        {gruposPagina.map(grupo => {
+
+                            const equipoPrincipal =
+                                grupo.unidades[0]
+
+                            return (
+                                <div
+                                    className="col-xl-4 col-md-6"
+                                    key={
+                                        grupo.modelo
                                     }
-                                />
-                            </div>
-                        ))}
+                                >
+
+                                    <EquipoCard
+                                        equipo={
+                                            equipoPrincipal
+                                        }
+
+                                        unidades={
+                                            grupo.unidades
+                                        }
+
+                                        onPrestamo={
+                                            abrirModalPrestamo
+                                        }
+
+                                        onDevolver={
+                                            devolverEquipo
+                                        }
+
+                                        vencimiento={
+                                            getVencimiento(
+                                                equipoPrincipal.num_serie
+                                            )
+                                        }
+
+                                        onEquipoActualizado={
+                                            handleEquipoActualizado
+                                        }
+                                    />
+
+                                </div>
+                            )
+                        })}
+
                     </div>
+
                 )}
+
+                {/* ==================================================
+                    PAGINADOR
+                ================================================== */}
 
                 <Paginador
                     page={paginaActual}
                     setPage={setPage}
-                    totalItems={filteredEquipos.length}
+                    totalItems={gruposEquipos.length}
                     size={ROWS}
                 />
 
+                {/* ==================================================
+                    MODAL PRÉSTAMO
+                ================================================== */}
+
                 {modalPrestamo && (
+
                     <ModalPrestamo
                         equipo={equipoSeleccionado}
                         usuarios={usuarios}
                         empleados={empleados}
                         areas={areas}
+
                         onClose={() =>
                             setModalPrestamo(false)
                         }
+
                         onConfirmado={
                             handlePrestamoConfirmado
                         }
                     />
+
                 )}
 
+                {/* ==================================================
+                    MODAL REGISTRO
+                ================================================== */}
+
                 {modalRegistro && (
+
                     <ModalRegistroEquipo
                         areas={areas}
+
                         onClose={() =>
                             setModalRegistro(false)
                         }
+
                         onRegistrado={
                             handleEquipoRegistrado
                         }
                     />
+
                 )}
 
             </div>
+
         </div>
     )
 }

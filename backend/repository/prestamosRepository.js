@@ -965,10 +965,12 @@ exports.devolverPrestamoTransaction = async (
                 estado:
                     'devuelto',
 
-                // IMPORTANTE:
-                // NO modificamos las observaciones
-                // originales del préstamo.
+                // Observaciones registradas durante la devolución
+                observaciones:
+                    observaciones ??
+                    prestamo.observaciones,
 
+                // Evidencia registrada durante la devolución
                 evidencia:
                     evidencia ??
                     prestamo.evidencia
@@ -1157,8 +1159,9 @@ exports.devolverEquipoTransaction = async (
                     fecha_devolucion:
                         new Date(),
 
-                    // Conservamos las observaciones
-                    // originales del préstamo.
+                    observaciones:
+                        observaciones ??
+                        prestamo.observaciones,
 
                     evidencia:
                         evidencia ??
@@ -1180,8 +1183,9 @@ exports.devolverEquipoTransaction = async (
                     estado:
                         'parcial',
 
-                    // Conservamos las observaciones
-                    // originales del préstamo.
+                    observaciones:
+                        observaciones ??
+                        prestamo.observaciones,
 
                     evidencia:
                         evidencia ??
@@ -1372,6 +1376,14 @@ exports.findHistorialEquipo = async (
 
         fecha_asignacion:
             relacion.equipo?.fecha_asignacion ||
+            null,
+
+        fecha_baja:
+            relacion.equipo?.fecha_baja ||
+            null,
+
+        sistema_operativo:
+            relacion.equipo?.sistema_operativo ||
             null,
 
         fecha_baja:
@@ -1619,4 +1631,72 @@ exports.findHistorialUsuario = async (idUsuario) => {
                     null
             }))
     }))
+}
+
+// ======================================================
+// OBTENER PRÉSTAMOS PENDIENTES DE RECORDATORIO
+// ======================================================
+
+exports.findPrestamosParaRecordatorio = async () => {
+
+    return await prisma.prestamos.findMany({
+
+        where: {
+            estado: {
+                in: ['activo', 'parcial']
+            },
+
+            fecha_devolucion_programada: {
+                not: null
+            }
+        },
+
+        include: {
+            empleado: true,
+            usuario: true,
+
+            equipos: {
+                include: {
+                    equipo: true
+                }
+            }
+        },
+
+        orderBy: {
+            fecha_devolucion_programada: 'asc'
+        }
+    })
+}
+
+
+// ======================================================
+// MARCAR RECORDATORIO COMO ENVIADO
+// ======================================================
+
+exports.marcarRecordatorioEnviado = async (
+    idPrestamo,
+    tipoRecordatorio
+) => {
+
+    const camposPermitidos = [
+        'recordatorio_3_dias',
+        'recordatorio_1_dia',
+        'recordatorio_vencimiento',
+        'recordatorio_vencido'
+    ]
+
+    if (!camposPermitidos.includes(tipoRecordatorio)) {
+        throw new Error('TIPO_RECORDATORIO_INVALIDO')
+    }
+
+    return await prisma.prestamos.update({
+
+        where: {
+            id_prestamo: idPrestamo
+        },
+
+        data: {
+            [tipoRecordatorio]: true
+        }
+    })
 }
