@@ -85,7 +85,8 @@ exports.entregarProducto = async (req, res, next) => {
 
         await notificacionesService.notificarAdmins(
             'pmc',
-            `Se registró una entrega de ${entrega.cantidad} unidad(es) del PMC "${producto.nombre}" al ${destinatario}, área: ${entrega.area}.`
+            `Se registró una entrega de ${entrega.cantidad} unidad(es) del PMC "${producto.nombre}" al ${destinatario}, área: ${entrega.area}.`,
+            req.usuario && req.usuario.usuario
         );
 
         res.json({

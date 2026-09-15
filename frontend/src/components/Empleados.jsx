@@ -197,7 +197,7 @@ const Empleados = () => {
                         ? {
                             ...empleado,
                             ...empleadoSeleccionado,
-                            ...response.data
+                            ...response.data.empleado
                         }
                         : empleado
                 )
@@ -236,7 +236,7 @@ const Empleados = () => {
 
                 const newEmpleados = [
                     ...empleados,
-                    response.data
+                    response.data.empleado
                 ]
 
                 setEmpleados(newEmpleados)
@@ -447,7 +447,7 @@ const Empleados = () => {
                 e.id_empleado === empleado.id_empleado
                     ? {
                         ...e,
-                        ...response.data,
+                        ...response.data.empleado,
                         estado: nuevoEstado
                     }
                     : e

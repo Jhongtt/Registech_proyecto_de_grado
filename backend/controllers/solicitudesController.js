@@ -7,7 +7,8 @@ exports.crearSolicitud = async (req, res) => {
         
         await notificacionesService.notificarAdmins(
             'solicitud',
-            `Nueva solicitud de ${req.usuario.usuario}: ${solicitud.detalles || 'Sin detalles'}`
+            `Nueva solicitud de ${req.usuario.usuario}: ${solicitud.detalles || 'Sin detalles'}`,
+            req.usuario && req.usuario.usuario
         )
 
         res.status(201).json(solicitud)

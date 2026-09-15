@@ -37,11 +37,18 @@ exports.crearEquipo = async (datos) => {
             data: {
                 num_serie: datos.num_serie,
                 equipo: datos.equipo,
-                area: datos.area || 'Sin asignar',
+
+                // El equipo se registra sin área asignada
+                area: null,
+
                 descripcion: datos.descripcion || null,
                 sistema_operativo: datos.sistema_operativo || null,
                 imagen: datos.imagen || null,
                 estado: datos.estado,
+
+                // Estos datos solo se asignan cuando se realiza un préstamo
+                responsable: null,
+                fecha_asignacion: null,
 
                 fecha_adquisicion: datos.fecha_adquisicion
                     ? new Date(datos.fecha_adquisicion)
@@ -270,35 +277,24 @@ exports.findReportesPendientes = async () => {
             }
         })
 
-    const resultado = []
+    const numSeries = [...new Set(reportes.map(r => r.num_serie).filter(Boolean))]
+    const equiposList = await prisma.equipos.findMany({
+        where: { num_serie: { in: numSeries } },
+        select: { num_serie: true, equipo: true, area: true, descripcion: true, estado: true, responsable: true }
+    })
+    const eqMap = new Map(equiposList.map(e => [e.num_serie, e]))
 
-    for (const reporte of reportes) {
-        const equipo =
-            await prisma.equipos.findUnique({
-                where: {
-                    num_serie: reporte.num_serie
-                }
-            })
-
-        resultado.push({
+    const resultado = reportes.map(reporte => {
+        const equipo = eqMap.get(reporte.num_serie) || null
+        return {
             ...reporte,
-
-            equipo:
-                equipo?.equipo || null,
-
-            area:
-                equipo?.area || null,
-
-            descripcion_equipo:
-                equipo?.descripcion || null,
-
-            estado_equipo:
-                equipo?.estado || null,
-
-            responsable:
-                equipo?.responsable || null
-        })
-    }
+            equipo: equipo?.equipo || null,
+            area: equipo?.area || null,
+            descripcion_equipo: equipo?.descripcion || null,
+            estado_equipo: equipo?.estado || null,
+            responsable: equipo?.responsable || null
+        }
+    })
 
     return anexarNombresUsuarios(resultado)
 }
@@ -315,35 +311,24 @@ exports.findHistorialCompleto = async () => {
             }
         })
 
-    const resultado = []
+    const numSeries = [...new Set(reportes.map(r => r.num_serie).filter(Boolean))]
+    const equiposList = await prisma.equipos.findMany({
+        where: { num_serie: { in: numSeries } },
+        select: { num_serie: true, equipo: true, area: true, descripcion: true, estado: true, responsable: true }
+    })
+    const eqMap = new Map(equiposList.map(e => [e.num_serie, e]))
 
-    for (const reporte of reportes) {
-        const equipo =
-            await prisma.equipos.findUnique({
-                where: {
-                    num_serie: reporte.num_serie
-                }
-            })
-
-        resultado.push({
+    const resultado = reportes.map(reporte => {
+        const equipo = eqMap.get(reporte.num_serie) || null
+        return {
             ...reporte,
-
-            equipo:
-                equipo?.equipo || null,
-
-            area:
-                equipo?.area || null,
-
-            descripcion_equipo:
-                equipo?.descripcion || null,
-
-            estado_equipo:
-                equipo?.estado || null,
-
-            responsable:
-                equipo?.responsable || null
-        })
-    }
+            equipo: equipo?.equipo || null,
+            area: equipo?.area || null,
+            descripcion_equipo: equipo?.descripcion || null,
+            estado_equipo: equipo?.estado || null,
+            responsable: equipo?.responsable || null
+        }
+    })
 
     return anexarNombresUsuarios(resultado)
 }
@@ -708,27 +693,21 @@ exports.buscarMantenimientos = async (
             }
         })
 
-    const resultado = []
+    const numSeries = [...new Set(reportes.map(r => r.num_serie).filter(Boolean))]
+    const equiposList = await prisma.equipos.findMany({
+        where: { num_serie: { in: numSeries } },
+        select: { num_serie: true, equipo: true, area: true }
+    })
+    const eqMap = new Map(equiposList.map(e => [e.num_serie, e]))
 
-    for (const reporte of reportes) {
-        const equipo =
-            await prisma.equipos.findUnique({
-                where: {
-                    num_serie:
-                        reporte.num_serie
-                }
-            })
-
-        resultado.push({
+    const resultado = reportes.map(reporte => {
+        const equipo = eqMap.get(reporte.num_serie) || null
+        return {
             ...reporte,
-
-            equipo:
-                equipo?.equipo || null,
-
-            area:
-                equipo?.area || null
-        })
-    }
+            equipo: equipo?.equipo || null,
+            area: equipo?.area || null
+        }
+    })
 
     return anexarNombresUsuarios(resultado)
 }

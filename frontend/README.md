@@ -87,10 +87,11 @@ Características principales:
 ## Login
 
 - Autenticación con token JWT + cookie CSRF.
-- **Cuentas demo** desplegables para sustentación:
-  - Administrador — `admin@registech.com` / `admin123`
-  - Técnico Mantenimiento — `soporte@registech.com` / `soporte123`
-  - Inventario — `inventario@registech.com` / `rh123`
+- **Cuentas demo** desplegables para sustentación (contraseña temporal: `Clave*2026`):
+  - Administrador — `wolftareas@gmail.com` (Jhonatan)
+  - Administrador — `santiago19931916@gmail.com` (Aly)
+  - Técnico Mantenimiento — `cesarcar77@gmail.com` (Cesar)
+  - Inventario — `narilin2006@gmail.com` (Narilin)
 - Recuperación de contraseña con código de 6 dígitos (3 pasos).
 
 ## Módulos y acceso por rol

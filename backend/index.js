@@ -6,6 +6,7 @@ const rateLimit = require('express-rate-limit')
 const cookieParser = require('cookie-parser')
 const { middlewareCsrf } = require('./middlewares/csrf')
 const notificacionesRoutes = require('./routes/notificaciones')
+const { procesarRecordatorios } = require('./services/recordatoriosService')
 
 const usuariosRoutes = require('./routes/usuarios')
 const areasRoutes = require('./routes/areas')
@@ -51,7 +52,11 @@ const loginLimiter = rateLimit({
     }
 })
 
-app.use('/api/login', loginLimiter)
+const enModoTest = process.env.NODE_ENV === 'test'
+
+if (!enModoTest) {
+    app.use('/api/login', loginLimiter)
+}
 
 // LIMITE DE INTENTOS PARA RECUPERACION DE CONTRASENA
 const recuperacionLimiter = rateLimit({
@@ -64,8 +69,10 @@ const recuperacionLimiter = rateLimit({
     }
 })
 
-app.use('/api/usuarios/solicitar-recuperacion', recuperacionLimiter)
-app.use('/api/usuarios/restablecer-password', recuperacionLimiter)
+if (!enModoTest) {
+    app.use('/api/usuarios/solicitar-recuperacion', recuperacionLimiter)
+    app.use('/api/usuarios/restablecer-password', recuperacionLimiter)
+}
 
 // CSRF:
 // exempt login, recovery, and health
@@ -173,9 +180,20 @@ app.use((err, req, res, next) => {
 const port = process.env.PORT || 3000
 
 if (process.env.NODE_ENV !== 'test') {
-    app.listen(port, () => {
+
+    app.listen(port, async () => {
+
         console.log(
             `Servidor escuchando en http://localhost:${port}`
+        )
+
+        // Procesar recordatorios al iniciar el servidor
+        await procesarRecordatorios()
+
+        // Revisar recordatorios automáticamente cada 24 horas
+        setInterval(
+            procesarRecordatorios,
+            24 * 60 * 60 * 1000
         )
     })
 }

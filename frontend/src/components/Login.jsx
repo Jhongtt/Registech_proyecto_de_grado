@@ -6,12 +6,24 @@ import Swal from 'sweetalert2'
 import { API_ROUTES } from "../api/apiRoutes"
 import { useAuth } from "../context/AuthContext"
 
-// Cuentas de demostración para la sustentación (credenciales reales de la BD, verificadas).
+// Cuentas del equipo para localizar el correo de cada rol (sin contraseñas).
 const CUENTAS_DEMO = [
-    { rol: 'Administrador', icono: 'bi-shield-lock', correo: 'admin@registech.com', contrasena: 'admin123' },
-    { rol: 'Técnico Mantenimiento', icono: 'bi-wrench-adjustable', correo: 'soporte@registech.com', contrasena: 'soporte123' },
-    { rol: 'Inventario', icono: 'bi-box-seam', correo: 'inventario@registech.com', contrasena: 'rh123' },
+    { nombre: 'Jhonatan G.', rol: 'Administrador', icono: 'bi-shield-lock', correo: 'wolftareas@gmail.com' },
+    { nombre: 'Aly S.', rol: 'Administrador', icono: 'bi-shield-lock', correo: 'santiago19931916@gmail.com' },
+    { nombre: 'Cesar C.', rol: 'Técnico Mantenimiento', icono: 'bi-wrench-adjustable', correo: 'cesarcar77@gmail.com' },
+    { nombre: 'Narilin B.', rol: 'Inventario', icono: 'bi-box-seam', correo: 'narilin2006@gmail.com' },
 ]
+
+function enmascararCorreo(correo) {
+    if (!correo || typeof correo !== 'string') return ''
+
+    const [usuario, dominio] = correo.split('@')
+    if (!dominio) return correo
+
+    const visible = usuario.slice(0, 2)
+
+    return `${visible}${'*'.repeat(Math.max(usuario.length - 2, 1))}@${dominio}`
+}
 
 const Login = () => {
     const [correo, setCorreo] = useState("")
@@ -25,7 +37,6 @@ const Login = () => {
     const [pasoRecuperacion, setPasoRecuperacion] = useState(1)
     const [correoRecuperacion, setCorreoRecuperacion] = useState("")
     const [codigoRecuperacion, setCodigoRecuperacion] = useState("")
-    const [codigoDemoGenerado, setCodigoDemoGenerado] = useState("")
     const [nuevaContrasena, setNuevaContrasena] = useState("")
     const [confirmarContrasena, setConfirmarContrasena] = useState("")
     const [verNuevaPassword, setVerNuevaPassword] = useState(false)
@@ -128,15 +139,9 @@ const Login = () => {
         }
     }
 
-    const autocompletarPorCorreo = (correoValue) => {
-        const cuenta = CUENTAS_DEMO.find((c) => c.correo === correoValue)
-        if (cuenta) setContrasena(cuenta.contrasena)
-    }
-
     const handleAbrirRecuperar = () => {        setPasoRecuperacion(1)
         setCorreoRecuperacion("")
         setCodigoRecuperacion("")
-        setCodigoDemoGenerado("")
         setNuevaContrasena("")
         setConfirmarContrasena("")
         setModalRecuperar(true)
@@ -160,22 +165,19 @@ const Login = () => {
         setLoadingRecuperar(true)
 
         try {
-            const response = await axios.post(
+            await axios.post(
                 API_ROUTES.SOLICITAR_RECUPERACION,
                 { correo: correoLimpio },
                 { headers: { 'Content-Type': 'application/json' } }
             )
 
-            const codigoRecibido = response.data?.codigo || response.data?.reset_code || response.data?.code || ''
-            setCodigoDemoGenerado(codigoRecibido)
+            const correoVisible = enmascararCorreo(correoLimpio)
             setPasoRecuperacion(2)
 
             Swal.fire({
                 icon: 'info',
-                title: 'Código Generado',
-                html: codigoRecibido
-                    ? `<p class="mb-2">Tu código de verificación es:</p><div class="p-2 bg-light rounded"><b style="font-size: 1.6rem; color: #0284c7; letter-spacing: 4px;">${codigoRecibido}</b></div><p class="text-muted small mt-2 mb-0">En producción este código se enviaría por correo electrónico.</p>`
-                    : 'Se ha generado un código de verificación. Ingrésalo a continuación.',
+                title: 'Código Enviado',
+                html: `<p class="mb-2">Hemos enviado un código de verificación a:</p><div class="p-2 bg-light rounded fw-semibold text-center">${correoVisible}</div><p class="text-muted small mt-2 mb-0">Revisa tu bandeja de entrada (y la carpeta de spam).</p>`,
                 confirmButtonText: 'Continuar'
             })
         } catch (err) {
@@ -283,10 +285,7 @@ const Login = () => {
                                     className="form-control has-toggle"
                                     id="correo"
                                     value={correo}
-                                    onChange={(e) => {
-                                        setCorreo(e.target.value)
-                                        autocompletarPorCorreo(e.target.value)
-                                    }}
+                                    onChange={(e) => setCorreo(e.target.value)}
                                     placeholder="Selecciona o escribe tu correo"
                                     disabled={loading}
                                 />
@@ -308,18 +307,19 @@ const Login = () => {
                                         </div>
                                         {CUENTAS_DEMO.map((cuenta) => (
                                             <button
-                                                key={cuenta.rol}
+                                                key={cuenta.correo}
                                                 type="button"
                                                 className="demo-dropdown__item"
                                                 onClick={() => {
                                                     setCorreo(cuenta.correo)
-                                                    setContrasena(cuenta.contrasena)
                                                     setDropdownDemo(false)
                                                 }}
                                                 disabled={loading}
                                             >
                                                 <span className="demo-dropdown__text">
-                                                    <span className="demo-dropdown__rol">{cuenta.rol}</span>
+                                                    <span className="demo-dropdown__rol">
+                                                        {cuenta.nombre} · {cuenta.rol}
+                                                    </span>
                                                     <span className="demo-dropdown__correo">{cuenta.correo}</span>
                                                 </span>
                                             </button>
@@ -492,23 +492,8 @@ const Login = () => {
                                 {pasoRecuperacion === 2 && (
                                     <form onSubmit={handleRestablecerPassword}>
 
-                                        {codigoDemoGenerado && (
-                                            <div className="demo-code-box">
-                                                <div className="text-success fw-semibold small mb-1">
-                                                    <i className="bi bi-info-circle-fill me-1"></i>
-                                                    Modo Demostración / Exposición
-                                                </div>
-                                                <div className="demo-code-badge">
-                                                    {codigoDemoGenerado}
-                                                </div>
-                                                <small className="text-muted d-block mt-1" style={{ fontSize: '0.78rem' }}>
-                                                    (En producción este código se envía a tu bandeja de correo)
-                                                </small>
-                                            </div>
-                                        )}
-
                                         <p className="text-muted small mb-3">
-                                            Ingresa el código de 6 dígitos enviado para <b>{correoRecuperacion}</b> y escribe tu nueva contraseña.
+                                            Ingresa el código de 6 dígitos enviado para <b>{enmascararCorreo(correoRecuperacion)}</b> y escribe tu nueva contraseña.
                                         </p>
 
                                         <div className="mb-3">
@@ -578,12 +563,12 @@ const Login = () => {
                                         <div className="d-flex justify-content-between align-items-center mt-4">
                                             <button
                                                 type="button"
-                                                className="btn btn-outline-secondary btn-sm"
+                                                className="btn btn-outline-primary btn-sm"
                                                 onClick={() => setPasoRecuperacion(1)}
                                                 disabled={loadingRecuperar}
                                             >
                                                 <i className="bi bi-arrow-left me-1"></i>
-                                                Cambiar Correo
+                                                Volver
                                             </button>
 
                                             <div className="d-flex gap-2">

@@ -53,6 +53,10 @@ model prestamos {
   id_empleado                 String?            @db.Uuid
   id_usuario                  Int?
   fecha_devolucion_programada DateTime?          @db.Date
+  recordatorio_3_dias         Boolean            @default(false)
+  recordatorio_1_dia          Boolean            @default(false)
+  recordatorio_vencimiento    Boolean            @default(false)
+  recordatorio_vencido        Boolean            @default(false)
   equipos                     prestamo_equipos[]
   empleado                    empleados?         @relation(fields: [id_empleado], references: [id_empleado], onDelete: NoAction, onUpdate: NoAction, map: "prestamos_empleado_fkey")
   usuario                     usuarios?          @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "prestamos_usuario_fkey")
