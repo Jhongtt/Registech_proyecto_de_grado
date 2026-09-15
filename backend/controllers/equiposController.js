@@ -187,27 +187,15 @@ exports.reintegrarEquipo = async (req, res) => {
 // ======================================================
 // REPORTAR FALLA
 // ======================================================
-
 exports.reporteFalla = async (req, res) => {
     try {
-        const {
-            num_serie,
-            falla
-        } = req.body
-
-        // ==================================================
-        // VALIDAR DATOS
-        // ==================================================
+        const { num_serie, falla } = req.body
 
         if (!num_serie || !falla) {
             return res.status(400).json({
                 error: 'Número de serie y falla son obligatorios'
             })
         }
-
-        // ==================================================
-        // BUSCAR EQUIPO
-        // ==================================================
 
         const equipo = await prisma.equipos.findUnique({
             where: {
@@ -221,23 +209,11 @@ exports.reporteFalla = async (req, res) => {
             })
         }
 
-        // ==================================================
-        // SABER QUIÉN REPORTA
-        // ==================================================
-
         const usuarioReporta = req.usuario.usuario
         const rolUsuario = req.usuario.rol
 
-        // ==================================================
-        // DETERMINAR SI ES ADMIN
-        // ==================================================
-
         const esAdmin =
             String(rolUsuario || '').toLowerCase() === 'admin'
-
-        // ==================================================
-        // ESTADO DE LA ORDEN
-        // ==================================================
 
         const estadoOrden = esAdmin
             ? 'aprobada'
@@ -247,15 +223,7 @@ exports.reporteFalla = async (req, res) => {
             ? usuarioReporta
             : null
 
-        // ==================================================
-        // GENERAR ID DEL HISTORIAL
-        // ==================================================
-
         const id_historial = crypto.randomUUID()
-
-        // ==================================================
-        // CREAR REPORTE
-        // ==================================================
 
         const resultado =
             await equiposService.createReporteTransaction(
@@ -269,10 +237,6 @@ exports.reporteFalla = async (req, res) => {
                 usuarioReporta
             )
 
-        // ==================================================
-        // AUDITORÍA
-        // ==================================================
-
         await auditoriaService.registrar(
             usuarioReporta,
             esAdmin
@@ -280,51 +244,29 @@ exports.reporteFalla = async (req, res) => {
                 : `Reportó una falla del equipo ${num_serie}`
         )
 
-        // ==================================================
-        // SI ES ADMINISTRADOR
-        // NOTIFICAR A MANTENIMIENTO
-        // ==================================================
-
         if (esAdmin) {
-            const usuariosMantenimiento =
-                await prisma.usuarios.findMany({
-                    where: {
-                        rol: 'mantenimiento',
-                        estado: {
-                            equals: 'activo',
-                            mode: 'insensitive'
-                        }
-                    },
-                    select: {
-                        usuario: true
-                    }
-                })
-
-            for (const tecnico of usuariosMantenimiento) {
-                await notificacionesService.crear(
-                    tecnico.usuario,
-                    'mantenimiento',
-                    `La orden ${resultado.id_historial} del equipo ${resultado.num_serie} fue registrada y aprobada automáticamente por el administrador ${usuarioReporta}. Diagnóstico: ${resultado.falla}. Ya puedes realizar la reparación.`
-                )
-            }
+            await notificacionesService.notificarTecnicos(
+                'mantenimiento',
+                `La orden ${resultado.id_historial} del equipo ${resultado.num_serie} fue registrada y aprobada automáticamente por el administrador ${usuarioReporta}. Diagnóstico: ${resultado.falla}. Ya puedes realizar la reparación.`
+            )
         } else {
             await notificacionesService.notificarAdmins(
                 'mantenimiento',
-                `El usuario ${usuarioReporta} ha reportado una falla en el equipo ${resultado.num_serie}. Diagnóstico: ${resultado.falla}. La orden ${resultado.id_historial} está pendiente de tu aprobación.`
+                `El usuario ${usuarioReporta} ha reportado una falla en el equipo ${resultado.num_serie}. Diagnóstico: ${resultado.falla}. La orden ${resultado.id_historial} está pendiente de tu aprobación.`,
+                req.usuario && req.usuario.usuario
             )
         }
 
         // ==================================================
         // RESPUESTA
         // ==================================================
-
         res.status(201).json({
             mensaje: esAdmin
                 ? 'Reporte registrado y aprobado automáticamente'
                 : 'Reporte registrado. Pendiente de aprobación del administrador',
-
             reporte: resultado
         })
+
     } catch (error) {
         console.error(
             'Error al registrar reporte:',
@@ -438,34 +380,13 @@ exports.aprobarRechazarOrden = async (req, res) => {
         }
 
         // ==================================================
-        // BUSCAR PERSONAL DE MANTENIMIENTO
+        // NOTIFICAR AL PERSONAL DE SOPORTE/TÉCNICOS
         // ==================================================
 
-        const usuariosMantenimiento =
-            await prisma.usuarios.findMany({
-                where: {
-                    rol: 'mantenimiento',
-                    estado: {
-                        equals: 'activo',
-                        mode: 'insensitive'
-                    }
-                },
-                select: {
-                    usuario: true
-                }
-            })
-
-        // ==================================================
-        // NOTIFICAR A MANTENIMIENTO
-        // ==================================================
-
-        for (const tecnico of usuariosMantenimiento) {
-            await notificacionesService.crear(
-                tecnico.usuario,
-                'mantenimiento',
-                `La orden ${resultado.id_historial} fue aprobada por ${req.usuario.usuario}. Equipo: ${equipo?.equipo || 'No disponible'}. Número de serie: ${resultado.num_serie}. Diagnóstico: ${resultado.falla}. Ya puedes realizar la reparación.`
-            )
-        }
+        await notificacionesService.notificarTecnicos(
+            'mantenimiento',
+            `La orden ${resultado.id_historial} fue aprobada por ${req.usuario.usuario}. Equipo: ${equipo?.equipo || 'No disponible'}. Número de serie: ${resultado.num_serie}. Diagnóstico: ${resultado.falla}. Ya puedes realizar la reparación.`
+        )
 
         // ==================================================
         // RESPUESTA
@@ -1198,7 +1119,8 @@ exports.reportarEquipoExtraviado = async (req, res) => {
 
         await notificacionesService.notificarAdmins(
             'extravio',
-            `ALERTA: El equipo ${equipo.equipo} (${equipo.num_serie}) no aparece en el área ${equipo.area || 'Sin asignar'}${observaciones ? `. Detalle: ${observaciones}` : ''}.`
+            `ALERTA: El equipo ${equipo.equipo} (${equipo.num_serie}) no aparece en el área ${equipo.area || 'Sin asignar'}${observaciones ? `. Detalle: ${observaciones}` : ''}.`,
+            req.usuario && req.usuario.usuario
         )
 
         await notificacionesService.crear(
@@ -1305,6 +1227,7 @@ exports.cancelarReporte = async (req, res) => {
                 : 'Disponible'
 
         await prisma.$transaction([
+
             prisma.historial_mantenimientos.delete({
                 where: {
                     id_historial:
@@ -1336,6 +1259,7 @@ exports.cancelarReporte = async (req, res) => {
                 estado: nuevoEstado
             }
         })
+
     } catch (error) {
         console.error(
             'Error al cancelar reporte:',

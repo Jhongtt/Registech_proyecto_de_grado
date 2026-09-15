@@ -5,7 +5,7 @@ const supabaseUrl = process.env.SUPABASE_URL
 const supabaseKey = process.env.SUPABASE_KEY
 
 if (!supabaseUrl || !supabaseKey) {
-    console.warn('⚠️ Faltan las credenciales de Supabase en el archivo .env')
+    console.warn(' Faltan las credenciales de Supabase en el archivo .env')
 }
 
 // Inicializar el cliente usando la Service Role Key para poder subir archivos al bucket público

@@ -68,6 +68,7 @@ router.post(
 router.post(
     '/equipos/:num_serie/liberar',
     authMiddleware,
+    requireRol('admin', 'inventario'),
     liberarEquipo
 )
 
@@ -96,7 +97,7 @@ router.get(
 router.get(
     '/equipos/mantenimientos',
     authMiddleware,
-    requireRol('admin', 'soporte'),
+    requireRol('admin', 'soporte', 'inventario'),
     getHistorialMantenimientos
 )
 
