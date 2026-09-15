@@ -92,8 +92,6 @@ export default function EquipoCard({
             return
         }
 
-        // Si solamente hay una disponible,
-        // se abre directamente el préstamo.
         if (disponibles.length === 1) {
 
             onPrestamo(disponibles[0])
@@ -699,7 +697,7 @@ export default function EquipoCard({
 
     const AccionesDetalle = (
         <>
-
+            {/* Botón de Préstamo si está Disponible */}
             {unidadDetalle.estado === 'Disponible' &&
                 usuario?.rol === 'admin' && (
 
@@ -711,6 +709,25 @@ export default function EquipoCard({
                     >
                         <i className="bi bi-arrow-return-right me-1"></i>
                         Préstamo
+                    </button>
+
+                )}
+
+            {/* NUEVO: Botón de Devolución si está Asignado o en préstamo */}
+            {(unidadDetalle.estado === 'Asignado' ||
+                unidadDetalle.estado === 'en_prestamo' ||
+                unidadDetalle.estado === 'En préstamo') &&
+                usuario?.rol === 'admin' && (
+
+                    <button
+                        className="btn btn-sm btn-warning text-dark fw-semibold"
+                        onClick={() => {
+                            setVerDetalle(false)
+                            onDevolver && onDevolver(unidadDetalle)
+                        }}
+                    >
+                        <i className="bi bi-arrow-return-left me-1"></i>
+                        Devolver
                     </button>
 
                 )}
@@ -739,8 +756,15 @@ export default function EquipoCard({
                 puedeReportarDano && (
 
                     <button
+
                         className="btn btn-danger"
                         onClick={handleReportarDano}
+
+                        className="btn btn-outline-danger"
+                        onClick={
+                            handleReportarDano
+                        }
+
                     >
                         Registrar daño
                     </button>
@@ -751,8 +775,15 @@ export default function EquipoCard({
                 puedeReportarDano && (
 
                     <button
+
                         className="btn btn-danger"
                         onClick={handleCancelarReporte}
+
+                        className="btn btn-outline-danger"
+                        onClick={
+                            handleCancelarReporte
+                        }
+
                     >
                         Cancelar reporte de daño
                     </button>
@@ -872,17 +903,26 @@ export default function EquipoCard({
                             </button>
 
                             {usuario?.rol === 'admin' && (
-
-                                <button
-                                    className="btn btn-sm btn-success"
-                                    onClick={
-                                        handlePrestamo
-                                    }
-                                >
-                                    <i className="bi bi-arrow-return-right me-1"></i>
-                                    Préstamo
-                                </button>
-
+                                // NUEVO: Evaluamos si mostrar Préstamo o Devolver en la tarjeta principal
+                                (equipo.estado === 'Asignado' ||
+                                 equipo.estado === 'en_prestamo' ||
+                                 equipo.estado === 'En préstamo') ? (
+                                    <button
+                                        className="btn btn-sm btn-warning text-dark fw-semibold"
+                                        onClick={() => onDevolver && onDevolver(equipo)}
+                                    >
+                                        <i className="bi bi-arrow-return-left me-1"></i>
+                                        Devolver
+                                    </button>
+                                ) : (
+                                    <button
+                                        className="btn btn-sm btn-success"
+                                        onClick={handlePrestamo}
+                                    >
+                                        <i className="bi bi-arrow-return-right me-1"></i>
+                                        Préstamo
+                                    </button>
+                                )
                             )}
 
                         </div>

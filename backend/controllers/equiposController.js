@@ -257,12 +257,13 @@ exports.reporteFalla = async (req, res) => {
             )
         }
 
-
+<<<<<<<<< Temporary merge branch 1
         // ==================================================
         // RESPUESTA
         // ==================================================
 
-
+=========
+>>>>>>>>> Temporary merge branch 2
         res.status(201).json({
             mensaje: esAdmin
                 ? 'Reporte registrado y aprobado automáticamente'

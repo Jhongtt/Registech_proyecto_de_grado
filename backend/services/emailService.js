@@ -1916,11 +1916,13 @@ async function verificarConexion() {
 
         await transporter.verify()
 
+<<<<<<<<< Temporary merge branch 1
+        console.log(' Conexión SMTP con Brevo correcta')
+=========
         console.log(
             '✅ Conexión SMTP con Brevo correcta'
         )
-
-        console.log(' Conexión SMTP con Brevo correcta')
+>>>>>>>>> Temporary merge branch 2
 
         return true
 

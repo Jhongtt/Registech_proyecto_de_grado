@@ -6,6 +6,7 @@ import { API_ROUTES } from "../api/apiRoutes"
 import EquipoCard from "./equipos/EquipoCard"
 import ModalPrestamo from "./equipos/ModalPrestamo"
 import ModalRegistroEquipo from "./equipos/ModalRegistroEquipo"
+import ModalDevolucion from "./equipos/ModalDevolucion"
 import Paginador from "./ui/Paginador"
 import { useAuth } from "../context/AuthContext"
 
@@ -30,6 +31,10 @@ const Equipos = ({ usuario }) => {
     const [equipoSeleccionado, setEquipoSeleccionado] = useState({})
     const [modalRegistro, setModalRegistro] = useState(false)
 
+    const [modalDevolucion, setModalDevolucion] = useState(false)
+    const [prestamoParaDevolucion, setPrestamoParaDevolucion] = useState(null)
+
+  
     const [filter, setFilter] = useState('')
     const [filtroEstado, setFiltroEstado] = useState('')
     const [page, setPage] = useState(1)
@@ -311,6 +316,10 @@ const Equipos = ({ usuario }) => {
             )
 
             prestamo = res.data
+           
+            setPrestamoParaDevolucion(prestamo)
+            setModalDevolucion(true)
+            return;
 
         } catch {
 
@@ -696,6 +705,18 @@ const Equipos = ({ usuario }) => {
                         }
                     />
 
+                )}
+
+                {/* <-- AGREGA ESTE BLOQUE AL FINAL DE LOS MODALES --> */}
+                {modalDevolucion && (
+                    <ModalDevolucion 
+                        prestamo={prestamoParaDevolucion}
+                        onClose={() => setModalDevolucion(false)}
+                        onSuccess={() => {
+                            setModalDevolucion(false)
+                            cargarDatos() // Refresca la tabla
+                        }}
+                    />
                 )}
 
             </div>
