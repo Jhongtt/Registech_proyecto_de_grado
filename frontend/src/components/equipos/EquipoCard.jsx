@@ -700,7 +700,7 @@ export default function EquipoCard({
                 usuario?.rol === 'admin' && (
 
                     <button
-                        className="btn btn-sm btn-success"
+                        className="btn btn-sm btn-prestamo-solid"
                         onClick={() =>
                             handlePrestamo()
                         }
@@ -751,7 +751,7 @@ export default function EquipoCard({
 
             {(unidadDetalle.estado === 'Disponible' ||
                 unidadDetalle.estado === 'Asignado') &&
-                puedeReportarDano && (
+                usuario?.rol === 'soporte' && (
 
                     <button
                         className="btn btn-outline-danger"
@@ -904,7 +904,7 @@ export default function EquipoCard({
                                     </button>
                                 ) : (
                                     <button
-                                        className="btn btn-sm btn-success"
+                                        className="btn btn-sm btn-prestamo-solid"
                                         onClick={handlePrestamo}
                                     >
                                         <i className="bi bi-arrow-return-right me-1"></i>
@@ -1447,8 +1447,8 @@ export default function EquipoCard({
                                                 className={`btn flex-fill ${
                                                     historialSeleccionado ===
                                                     'prestamos'
-                                                        ? 'btn-primary'
-                                                        : 'btn-outline-primary'
+                                                        ? 'btn-historial btn-historial--prestamos-active'
+                                                        : 'btn-historial btn-historial--prestamos'
                                                 }`}
                                                 onClick={() =>
                                                     seleccionarHistorial(
@@ -1468,8 +1468,8 @@ export default function EquipoCard({
                                                 className={`btn flex-fill ${
                                                     historialSeleccionado ===
                                                     'mantenimientos'
-                                                        ? 'btn-warning'
-                                                        : 'btn-outline-warning'
+                                                        ? 'btn-historial btn-historial--mantenimientos-active'
+                                                        : 'btn-historial btn-historial--mantenimientos'
                                                 }`}
                                                 onClick={() =>
                                                     seleccionarHistorial(
