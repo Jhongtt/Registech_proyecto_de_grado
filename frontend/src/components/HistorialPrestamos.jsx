@@ -125,7 +125,7 @@ const HistorialPrestamos = () => {
                                     <th>Inicio</th>
                                     <th>Límite / Devolución</th>
                                     <th>Duración</th>
-                                    <th>Detalles / Evidencia</th>
+                                    <th>Detalles</th>
                                     <th>Estado</th>
                                 </tr>
                             </thead>
@@ -154,16 +154,6 @@ const HistorialPrestamos = () => {
                                                 <div style={{ maxWidth: '180px', fontSize: '0.85rem' }}>
                                                     {p.observaciones ? <span className="text-muted">{p.observaciones}</span> : <span className="text-muted fst-italic">Sin observaciones</span>}
                                                 </div>
-                                                {p.evidencia && (
-                                                    <a 
-                                                        href={API_ROUTES.ARCHIVO_EVIDENCIA(p.evidencia)} 
-                                                        target="_blank" 
-                                                        rel="noreferrer" 
-                                                        className="btn btn-sm btn-primary mt-1"
-                                                    >
-                                                        <i className="bi bi-image me-1"></i> Ver Foto
-                                                    </a>
-                                                )}
                                             </td>
                                             <td>
                                                 <span className={`badge ${getEstadoClass(p.estado)}`}>
