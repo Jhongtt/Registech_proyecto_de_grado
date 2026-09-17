@@ -904,7 +904,7 @@ export default function EquipoCard({
                                     </button>
                                 ) : (
                                     <button
-                                        className="btn btn-sm btn-prestamo-solid"
+                                        className="btn btn-sm btn-success"
                                         onClick={handlePrestamo}
                                     >
                                         <i className="bi bi-arrow-return-right me-1"></i>
@@ -1447,8 +1447,8 @@ export default function EquipoCard({
                                                 className={`btn flex-fill ${
                                                     historialSeleccionado ===
                                                     'prestamos'
-                                                        ? 'btn-historial btn-historial--prestamos-active'
-                                                        : 'btn-historial btn-historial--prestamos'
+                                                        ? 'btn-primary'
+                                                        : 'btn-outline-primary'
                                                 }`}
                                                 onClick={() =>
                                                     seleccionarHistorial(
@@ -1468,8 +1468,8 @@ export default function EquipoCard({
                                                 className={`btn flex-fill ${
                                                     historialSeleccionado ===
                                                     'mantenimientos'
-                                                        ? 'btn-historial btn-historial--mantenimientos-active'
-                                                        : 'btn-historial btn-historial--mantenimientos'
+                                                        ? 'btn-warning'
+                                                        : 'btn-outline-warning'
                                                 }`}
                                                 onClick={() =>
                                                     seleccionarHistorial(

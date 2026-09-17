@@ -545,7 +545,7 @@ exports.resolverReporte = async (req, res) => {
             !solucion
         ) {
             console.log(
-                '❌ FALTAN DATOS PARA REGISTRAR LA SOLUCIÓN'
+                ' FALTAN DATOS PARA REGISTRAR LA SOLUCIÓN'
             )
 
             return res.status(400).json({
