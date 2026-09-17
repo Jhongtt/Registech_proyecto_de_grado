@@ -1077,6 +1077,24 @@ code {
 }
 
 /* ============================================================
+   Botón "Préstamo" sólido (sin efecto hover)
+   ============================================================ */
+.btn-prestamo-solid {
+  background-color: #16a34a !important;
+  border-color: #16a34a !important;
+  color: #fff !important;
+}
+.btn-prestamo-solid:hover,
+.btn-prestamo-solid:focus,
+.btn-prestamo-solid:active {
+  background-color: #16a34a !important;
+  border-color: #16a34a !important;
+  color: #fff !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* ============================================================
    Footer del sidebar (reducir menú + cerrar sesión)
    ============================================================ */
 .sidebar__footer { display: flex; flex-direction: column; gap: 0.35rem; }
@@ -1109,11 +1127,20 @@ code {
 .btn-outline-danger {
   color: #dc2626 !important;
   border-color: #f87171 !important;
-  background-color: #fff !important;
+  background-color: #fee2e2 !important;
+}
+.btn-outline-danger:hover:not(:disabled),
+.btn-outline-danger:active:not(:disabled),
+.btn-outline-danger:focus:not(:disabled) {
+  color: #dc2626 !important;
+  border-color: #f87171 !important;
+  background-color: #fee2e2 !important;
+  box-shadow: none !important;
 }
 [data-theme="dark"] .btn-outline-danger {
   color: #fca5a5 !important;
   border-color: #dc2626 !important;
+  background-color: #450a0a !important;
 }
 
 .btn-outline-primary {
@@ -1148,4 +1175,59 @@ code {
 [data-theme="dark"] .btn-outline-success {
   color: #4ade80 !important;
   border-color: #166534 !important;
+}
+
+/* ============================================================
+   Selector de historial del modal de detalles de equipo
+   (color estático predeterminado, sin cambios al pasar el cursor)
+   ============================================================ */
+.btn-historial {
+  transition: none !important;
+}
+.btn-historial:hover:not(:disabled),
+.btn-historial:active:not(:disabled),
+.btn-historial:focus:not(:disabled) {
+  box-shadow: none !important;
+}
+
+.btn-historial--prestamos {
+  color: #1d4ed8 !important;
+  border-color: #93c5fd !important;
+  background-color: #dbeafe !important;
+}
+.btn-historial--prestamos-active {
+  color: #fff !important;
+  border-color: #2563eb !important;
+  background-color: #2563eb !important;
+}
+[data-theme="dark"] .btn-historial--prestamos {
+  color: #93c5fd !important;
+  border-color: #1d4ed8 !important;
+  background-color: #172554 !important;
+}
+[data-theme="dark"] .btn-historial--prestamos-active {
+  color: #fff !important;
+  border-color: #2563eb !important;
+  background-color: #2563eb !important;
+}
+
+.btn-historial--mantenimientos {
+  color: #b45309 !important;
+  border-color: #fbbf24 !important;
+  background-color: #fffbeb !important;
+}
+.btn-historial--mantenimientos-active {
+  color: #fff !important;
+  border-color: #d97706 !important;
+  background-color: #d97706 !important;
+}
+[data-theme="dark"] .btn-historial--mantenimientos {
+  color: #fbbf24 !important;
+  border-color: #b45309 !important;
+  background-color: #422006 !important;
+}
+[data-theme="dark"] .btn-historial--mantenimientos-active {
+  color: #fff !important;
+  border-color: #d97706 !important;
+  background-color: #d97706 !important;
 }
