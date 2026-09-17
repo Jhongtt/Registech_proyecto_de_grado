@@ -53,12 +53,16 @@ const crearEquipoSchema = z.object({
 
 const moverEquipoSchema = z.object({
     params: z.object({
-        num_serie: z.string({ required_error: 'El número de serie es requerido' }).min(1).max(50)
+        num_serie: z
+            .string({
+                required_error: 'El número de serie es requerido'
+            })
+            .min(1)
+            .max(50)
     }),
-    body: z.object({
-        area: z.string({ required_error: 'El departamento de destino es requerido' }).min(2, 'El departamento no es válido').max(100)
-    })
-});
+
+    body: z.object({})
+})
 
 const reportarExtraviadoSchema = z.object({
     params: z.object({

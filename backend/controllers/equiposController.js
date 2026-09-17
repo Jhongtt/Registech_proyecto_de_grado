@@ -257,13 +257,11 @@ exports.reporteFalla = async (req, res) => {
             )
         }
 
-<<<<<<<<< Temporary merge branch 1
+
         // ==================================================
         // RESPUESTA
         // ==================================================
 
-=========
->>>>>>>>> Temporary merge branch 2
         res.status(201).json({
             mensaje: esAdmin
                 ? 'Reporte registrado y aprobado automáticamente'
@@ -1043,7 +1041,6 @@ exports.actualizarFoto = async (req, res) => {
 exports.moverEquipo = async (req, res) => {
     try {
         const { num_serie } = req.params
-        const area = req.body.area
 
         const existe =
             await equiposService.encontrarEquipo(
@@ -1056,36 +1053,24 @@ exports.moverEquipo = async (req, res) => {
             })
         }
 
-        const areaExiste =
-            await equiposService.verificarArea(
-                area
-            )
-
-        if (!areaExiste) {
-            return res.status(400).json({
-                error: 'El departamento no existe'
-            })
-        }
-
         const actualizado =
             await equiposService.moverEquipo(
-                num_serie,
-                area
+                num_serie
             )
 
         await auditoriaService.registrar(
             req.usuario.usuario,
-            `Movió el equipo ${actualizado.equipo} (${actualizado.num_serie}) al departamento ${area}`
+            `Se eliminó la relación del equipo ${actualizado.equipo} (${actualizado.num_serie}) con cualquier departamento`
         )
 
         await notificacionesService.crear(
             req.usuario.usuario,
             'equipos',
-            `El equipo ${actualizado.equipo} (${actualizado.num_serie}) fue reubicado al departamento ${area}.`
+            `El equipo ${actualizado.equipo} (${actualizado.num_serie}) ya no está relacionado con ningún departamento.`
         )
 
         res.json({
-            mensaje: 'Equipo reubicado exitosamente',
+            mensaje: 'Relación con departamento eliminada exitosamente',
             equipo: actualizado
         })
     } catch (error) {
@@ -1095,7 +1080,7 @@ exports.moverEquipo = async (req, res) => {
         )
 
         res.status(500).json({
-            error: 'Error al mover el equipo'
+            error: 'Error al actualizar el equipo'
         })
     }
 }

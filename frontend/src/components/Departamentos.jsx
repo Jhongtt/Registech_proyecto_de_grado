@@ -292,14 +292,9 @@ const Departamentos = () => {
     // ======================================================
     // CONTAR EQUIPOS DEL ÁREA
     // ======================================================
-
-    const contarEquipos = (area) => {
-        if (!area) return 0
-        return equipos.filter(e =>
-            String(e.area || '').toLowerCase() === area.toLowerCase() &&
-            String(e.estado).toLowerCase() !== 'baja'
-        ).length
-    }
+const contarEquipos = (area) => {
+    return obtenerEquiposArea(area).length
+}
 
 
     // ======================================================

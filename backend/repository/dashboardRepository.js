@@ -17,12 +17,17 @@ exports.getStats = async () => {
         baja: baja.rows[0].count,
     }
 }
-
 exports.getEquiposPorArea = async () => {
     const { rows } = await db.query(
-        `SELECT area, COUNT(*)::int as total
-         FROM equipos
-         GROUP BY area
+        `SELECT 
+            p.area,
+            COUNT(DISTINCT pe.num_serie)::int AS total
+         FROM prestamos p
+         JOIN prestamo_equipos pe
+            ON p.id_prestamo = pe.id_prestamo
+         WHERE p.estado = 'activo'
+           AND p.area IS NOT NULL
+         GROUP BY p.area
          ORDER BY total DESC`
     )
 

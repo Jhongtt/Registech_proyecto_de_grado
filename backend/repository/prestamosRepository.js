@@ -826,6 +826,7 @@ exports.crearPrestamoTransaction = async (
 // DEVOLVER PRÉSTAMO COMPLETO
 // ======================================================
 
+
 exports.devolverPrestamoTransaction = async (
     idLimpio,
     observaciones,
@@ -939,6 +940,11 @@ exports.devolverPrestamoTransaction = async (
                         null,
 
                     fecha_asignacion:
+                        null,
+
+                    // El equipo ya no pertenece
+                    // a ningún departamento al devolverlo
+                    area:
                         null
                 }
             })
@@ -987,221 +993,98 @@ exports.devolverPrestamoTransaction = async (
 }
 
 
+
 // ======================================================
 // DEVOLVER UN SOLO EQUIPO
 // ======================================================
 
-exports.devolverEquipoTransaction = async (
-    idPrestamo,
-    numSerie,
-    observaciones,
-    evidencia
-) => {
-
+exports.devolverEquipoTransaction = async (idPrestamo, numSerie, observaciones, evidencia) => {
     return await prisma.$transaction(async (tx) => {
 
-        // ==================================================
-        // 1. BUSCAR PRÉSTAMO
-        // ==================================================
-
-        const prestamo =
-            await tx.prestamos.findUnique({
-
-                where: {
-                    id_prestamo:
-                        idPrestamo
+        const relacion = await tx.prestamo_equipos.findUnique({
+            where: {
+                id_prestamo_num_serie: {
+                    id_prestamo: idPrestamo,
+                    num_serie: numSerie
                 }
-            })
-
-
-        if (!prestamo) {
-            throw new Error(
-                'PRESTAMO_NO_ENCONTRADO'
-            )
-        }
-
-
-        if (
-            !['activo', 'parcial']
-                .includes(prestamo.estado)
-        ) {
-
-            throw new Error(
-                'PRESTAMO_YA_DEVUELTO'
-            )
-        }
-
-
-        // ==================================================
-        // 2. BUSCAR RELACIÓN
-        // ==================================================
-
-        const relacion =
-            await tx.prestamo_equipos.findUnique({
-
-                where: {
-
-                    id_prestamo_num_serie: {
-
-                        id_prestamo:
-                            idPrestamo,
-
-                        num_serie:
-                            numSerie
-                    }
-                }
-            })
-
+            },
+            include: {
+                prestamo: true
+            }
+        })
 
         if (!relacion) {
-            throw new Error(
-                'EQUIPO_NO_PERTENECE'
-            )
+            throw new Error('El equipo no pertenece a este préstamo')
         }
-
 
         if (relacion.estado === 'devuelto') {
-
-            throw new Error(
-                'EQUIPO_YA_DEVUELTO'
-            )
+            throw new Error('Este equipo ya fue devuelto')
         }
 
-
-        // ==================================================
-        // 3. MARCAR EQUIPO COMO DEVUELTO
-        // ==================================================
-
+        // Marcar el equipo del préstamo como devuelto
         await tx.prestamo_equipos.update({
-
             where: {
-
                 id_prestamo_num_serie: {
-
-                    id_prestamo:
-                        idPrestamo,
-
-                    num_serie:
-                        numSerie
+                    id_prestamo: idPrestamo,
+                    num_serie: numSerie
                 }
             },
-
-            data: {
-
-                estado:
-                    'devuelto'
-            }
+           data: {
+    estado: 'devuelto',
+    fecha_devolucion: new Date()
+}
         })
 
-
-        // ==================================================
-        // 4. LIBERAR EQUIPO
-        // ==================================================
-
+        // Liberar completamente el equipo
+        // Al quedar disponible NO debe conservar departamento/área
         await tx.equipos.update({
-
             where: {
-                num_serie:
-                    numSerie
+                num_serie: numSerie
             },
-
             data: {
-
-                estado:
-                    'Disponible',
-
-                responsable:
-                    null,
-
-                fecha_asignacion:
-                    null
+                estado: 'Disponible',
+                responsable: null,
+                fecha_asignacion: null,
+                area: null
             }
         })
 
-
-        // ==================================================
-        // 5. CONTAR EQUIPOS PENDIENTES
-        // ==================================================
-
-        const equiposPendientes =
-            await tx.prestamo_equipos.count({
-
-                where: {
-
-                    id_prestamo:
-                        idPrestamo,
-
-                    estado:
-                        'prestado'
+        // Verificar si todavía quedan equipos activos en el préstamo
+        const equiposActivos = await tx.prestamo_equipos.count({
+            where: {
+                id_prestamo: idPrestamo,
+                estado: {
+                    not: 'devuelto'
                 }
-            })
+            }
+        })
 
-
-        // ==================================================
-        // 6. ACTUALIZAR ESTADO DEL PRÉSTAMO
-        // ==================================================
-
-        if (equiposPendientes === 0) {
-
+        // Si ya no quedan equipos activos, cerrar el préstamo
+        if (equiposActivos === 0) {
             await tx.prestamos.update({
-
                 where: {
-                    id_prestamo:
-                        idPrestamo
+                    id_prestamo: idPrestamo
                 },
-
                 data: {
-
-                    estado:
-                        'devuelto',
-
-                    // Fecha REAL de devolución
-                    fecha_devolucion:
-                        new Date(),
-
-                    observaciones:
-                        observaciones ??
-                        prestamo.observaciones,
-
-                    evidencia:
-                        evidencia ??
-                        prestamo.evidencia
+                    estado: 'devuelto',
+                    fecha_devolucion: new Date()
                 }
             })
-
         } else {
-
+            // Si todavía quedan equipos, el préstamo queda parcial
             await tx.prestamos.update({
-
                 where: {
-                    id_prestamo:
-                        idPrestamo
+                    id_prestamo: idPrestamo
                 },
-
                 data: {
-
-                    estado:
-                        'parcial',
-
-                    observaciones:
-                        observaciones ??
-                        prestamo.observaciones,
-
-                    evidencia:
-                        evidencia ??
-                        prestamo.evidencia
+                    estado: 'parcial'
                 }
             })
         }
-
 
         return {
-
-            equiposRestantes:
-                equiposPendientes,
-
-            prestamoFinalizado:
-                equiposPendientes === 0
+            mensaje: 'Equipo devuelto correctamente',
+            num_serie: numSerie
         }
     })
 }
