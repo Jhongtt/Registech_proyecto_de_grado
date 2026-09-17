@@ -63,8 +63,10 @@ export default function EquipoCard({
 
     const puedeReportarDano =
         usuario &&
-        (usuario.rol === 'admin' ||
-            usuario.rol === 'soporte')
+        (
+            usuario.rol === 'admin' ||
+            usuario.rol === 'soporte'
+        )
 
     // ======================================================
     // PRÉSTAMO
@@ -678,6 +680,7 @@ export default function EquipoCard({
         setHistorial([])
         setMantenimientos([])
         setErrorHistorial('')
+        setCurrentImagen(unidad.imagen)
     }
 
     // ======================================================
@@ -696,14 +699,19 @@ export default function EquipoCard({
     const AccionesDetalle = (
         <>
             {/* Botón de Préstamo si está Disponible */}
+
             {unidadDetalle.estado === 'Disponible' &&
                 usuario?.rol === 'admin' && (
 
                     <button
+
+                        className="btn btn-sm btn-success"
+                        onClick={handlePrestamo}
+
                         className="btn btn-sm btn-prestamo-solid"
                         onClick={() =>
                             handlePrestamo()
-                        }
+                       
                     >
                         <i className="bi bi-arrow-return-right me-1"></i>
                         Préstamo
@@ -711,7 +719,8 @@ export default function EquipoCard({
 
                 )}
 
-            {/* NUEVO: Botón de Devolución si está Asignado o en préstamo */}
+            {/* Botón de Devolución */}
+
             {(unidadDetalle.estado === 'Asignado' ||
                 unidadDetalle.estado === 'en_prestamo' ||
                 unidadDetalle.estado === 'En préstamo') &&
@@ -721,7 +730,8 @@ export default function EquipoCard({
                         className="btn btn-sm btn-warning text-dark fw-semibold"
                         onClick={() => {
                             setVerDetalle(false)
-                            onDevolver && onDevolver(unidadDetalle)
+                            onDevolver &&
+                                onDevolver(unidadDetalle)
                         }}
                     >
                         <i className="bi bi-arrow-return-left me-1"></i>
@@ -730,6 +740,8 @@ export default function EquipoCard({
 
                 )}
 
+            {/* Reintegrar */}
+
             {(unidadDetalle.estado === 'Baja' ||
                 unidadDetalle.estado === 'Extraviado') &&
                 puedeGestionar && (
@@ -737,9 +749,7 @@ export default function EquipoCard({
                     <button
                         className="btn btn-success"
                         onClick={() => {
-
                             setVerDetalle(false)
-
                             handleReintegrar()
                         }}
                     >
@@ -749,30 +759,32 @@ export default function EquipoCard({
 
                 )}
 
+            {/* Registrar daño */}
+
             {(unidadDetalle.estado === 'Disponible' ||
                 unidadDetalle.estado === 'Asignado') &&
                 usuario?.rol === 'soporte' && (
 
                     <button
                         className="btn btn-outline-danger"
-                        onClick={
-                            handleReportarDano
-                        }
+                        onClick={handleReportarDano}
                     >
+                        <i className="bi bi-cone-striped me-1"></i>
                         Registrar daño
                     </button>
 
                 )}
+
+            {/* Cancelar reporte */}
 
             {unidadDetalle.estado === 'En mantenimiento' &&
                 puedeReportarDano && (
 
                     <button
                         className="btn btn-outline-danger"
-                        onClick={
-                            handleCancelarReporte
-                        }
+                        onClick={handleCancelarReporte}
                     >
+                        <i className="bi bi-x-circle me-1"></i>
                         Cancelar reporte de daño
                     </button>
 
@@ -891,18 +903,24 @@ export default function EquipoCard({
                             </button>
 
                             {usuario?.rol === 'admin' && (
-                                // NUEVO: Evaluamos si mostrar Préstamo o Devolver en la tarjeta principal
+
                                 (equipo.estado === 'Asignado' ||
-                                 equipo.estado === 'en_prestamo' ||
-                                 equipo.estado === 'En préstamo') ? (
+                                    equipo.estado === 'en_prestamo' ||
+                                    equipo.estado === 'En préstamo') ? (
+
                                     <button
                                         className="btn btn-sm btn-warning text-dark fw-semibold"
-                                        onClick={() => onDevolver && onDevolver(equipo)}
+                                        onClick={() =>
+                                            onDevolver &&
+                                            onDevolver(equipo)
+                                        }
                                     >
                                         <i className="bi bi-arrow-return-left me-1"></i>
                                         Devolver
                                     </button>
+
                                 ) : (
+
                                     <button
                                         className="btn btn-sm btn-success"
                                         onClick={handlePrestamo}
@@ -910,7 +928,9 @@ export default function EquipoCard({
                                         <i className="bi bi-arrow-return-right me-1"></i>
                                         Préstamo
                                     </button>
+
                                 )
+
                             )}
 
                         </div>
@@ -1236,9 +1256,7 @@ export default function EquipoCard({
 
                                 </div>
 
-                                {/* ==================================================
-                                    UNIDADES DEL MODELO
-                                ================================================== */}
+                                {/* UNIDADES DEL MODELO */}
 
                                 {esGrupo && (
 
@@ -1426,9 +1444,7 @@ export default function EquipoCard({
 
                                     </div>
 
-                                    {/* ==================================================
-                                        HISTORIAL
-                                    ================================================== */}
+                                    {/* HISTORIAL */}
 
                                     <div className="mt-4 pt-3 border-top">
 
@@ -1536,9 +1552,7 @@ export default function EquipoCard({
 
                                             )}
 
-                                        {/* ==================================================
-                                            HISTORIAL DE PRÉSTAMOS
-                                        ================================================== */}
+                                        {/* HISTORIAL DE PRÉSTAMOS */}
 
                                         {!cargandoHistorial &&
                                             !errorHistorial &&
@@ -1754,9 +1768,7 @@ export default function EquipoCard({
 
                                             )}
 
-                                        {/* ==================================================
-                                            HISTORIAL DE MANTENIMIENTOS
-                                        ================================================== */}
+                                        {/* HISTORIAL DE MANTENIMIENTOS */}
 
                                         {!cargandoHistorial &&
                                             !errorHistorial &&
