@@ -18,7 +18,7 @@ model estados_equipos {
 model equipos {
   num_serie         String             @id @db.VarChar(50)
   equipo            String             @db.VarChar(100)
-  area              String             @db.VarChar(100)
+ area String? @db.VarChar(100)
   descripcion       String?
   estado            String             @db.VarChar(50)
   responsable       String?            @db.VarChar(100)

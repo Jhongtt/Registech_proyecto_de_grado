@@ -71,7 +71,7 @@ exports.crearEquipo = async (datos) => {
 // LIBERAR EQUIPO
 // ======================================================
 
-exports.liberarEquipo = async (numSerieLimpio) => {
+exports.liberarEquipo = async (numSerieLimpio) => { 
     return await prisma.equipos.update({
         where: {
             num_serie: numSerieLimpio
@@ -79,7 +79,9 @@ exports.liberarEquipo = async (numSerieLimpio) => {
 
         data: {
             estado: 'Disponible',
-            responsable: null
+            responsable: null,
+            fecha_asignacion: null,
+            area: null
         }
     })
 }
@@ -823,8 +825,7 @@ exports.verificarArea = async (area) => {
 }
 
 exports.moverEquipo = async (
-    numSerie,
-    area
+    numSerie
 ) => {
     return await prisma.equipos.update({
         where: {
@@ -832,7 +833,7 @@ exports.moverEquipo = async (
         },
 
         data: {
-            area
+            area: null
         }
     })
 }
