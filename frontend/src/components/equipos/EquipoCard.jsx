@@ -704,14 +704,8 @@ export default function EquipoCard({
                 usuario?.rol === 'admin' && (
 
                     <button
-
                         className="btn btn-sm btn-success"
                         onClick={handlePrestamo}
-
-                        className="btn btn-sm btn-prestamo-solid"
-                        onClick={() =>
-                            handlePrestamo()
-                       
                     >
                         <i className="bi bi-arrow-return-right me-1"></i>
                         Préstamo
