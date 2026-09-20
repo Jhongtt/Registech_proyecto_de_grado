@@ -1,95 +1,128 @@
-const { pool } = require('../lib/db');
+
+const { prisma } = require('../lib/prisma')
 
 class PMCRepository {
 
-    async getAll() {
-        const result = await pool.query(
-            'SELECT * FROM productos_menor_cuantia ORDER BY creado_en DESC'
-        );
+    // =========================================================
+    // OBTENER TODOS LOS PRODUCTOS
+    // =========================================================
 
-        return result.rows;
+    async getAll() {
+
+        return await prisma.productos_menor_cuantia.findMany({
+            orderBy: {
+                creado_en: 'desc'
+            }
+        })
     }
+
+
+    // =========================================================
+    // OBTENER PRODUCTO POR ID
+    // =========================================================
 
     async getById(id) {
-        const result = await pool.query(
-            'SELECT * FROM productos_menor_cuantia WHERE id = $1',
-            [id]
-        );
 
-        return result.rows[0];
+        return await prisma.productos_menor_cuantia.findUnique({
+            where: {
+                id
+            }
+        })
     }
+
+
+    // =========================================================
+    // CREAR PRODUCTO
+    // =========================================================
 
     async create(data) {
-        const { nombre, descripcion, cantidad_total } = data;
 
-        const result = await pool.query(
-            `INSERT INTO productos_menor_cuantia
-                (nombre, descripcion, cantidad_total, cantidad_disponible)
-             VALUES ($1, $2, $3, $3)
-             RETURNING *`,
-            [nombre, descripcion, cantidad_total]
-        );
+        const {
+            nombre,
+            descripcion,
+            cantidad_total
+        } = data
 
-        return result.rows[0];
+        return await prisma.productos_menor_cuantia.create({
+            data: {
+                nombre,
+                descripcion: descripcion || null,
+                cantidad_total,
+                cantidad_disponible: cantidad_total
+            }
+        })
     }
 
+
+    // =========================================================
+    // ACTUALIZAR PRODUCTO
+    // =========================================================
+
     async update(id, data) {
+
         const {
             nombre,
             descripcion,
             cantidad_total,
             cantidad_disponible
-        } = data;
+        } = data
 
-        const result = await pool.query(
-            `UPDATE productos_menor_cuantia
-             SET nombre = $1,
-                 descripcion = $2,
-                 cantidad_total = $3,
-                 cantidad_disponible = $4
-             WHERE id = $5
-             RETURNING *`,
-            [
-                nombre,
-                descripcion,
-                cantidad_total,
-                cantidad_disponible,
+        return await prisma.productos_menor_cuantia.update({
+            where: {
                 id
-            ]
-        );
+            },
 
-        return result.rows[0];
+            data: {
+                nombre,
+                descripcion: descripcion || null,
+                cantidad_total,
+                cantidad_disponible
+            }
+        })
     }
+
+
+    // =========================================================
+    // ELIMINAR PRODUCTO
+    // =========================================================
 
     async delete(id) {
-        await pool.query(
-            'DELETE FROM productos_menor_cuantia WHERE id = $1',
-            [id]
-        );
 
-        return true;
+        await prisma.productos_menor_cuantia.delete({
+            where: {
+                id
+            }
+        })
+
+        return true
     }
+
+
+    // =========================================================
+    // ACTUALIZAR STOCK
+    // =========================================================
 
     async updateStock(id, newStock) {
-        const result = await pool.query(
-            `UPDATE productos_menor_cuantia
-             SET cantidad_disponible = $1
-             WHERE id = $2
-             RETURNING *`,
-            [newStock, id]
-        );
 
-        return result.rows[0];
+        return await prisma.productos_menor_cuantia.update({
+            where: {
+                id
+            },
+
+            data: {
+                cantidad_disponible: newStock
+            }
+        })
     }
+
 
     // =========================================================
     // REGISTRAR ENTREGA DE PMC
     // =========================================================
-    async registrarEntrega(idProducto, data) {
-        const client = await pool.connect();
 
-        try {
-            await client.query('BEGIN');
+    async registrarEntrega(idProducto, data) {
+
+        return await prisma.$transaction(async (tx) => {
 
             const {
                 cantidad,
@@ -98,190 +131,306 @@ class PMCRepository {
                 area,
                 fecha_entrega,
                 observaciones
-            } = data;
+            } = data
 
-            // Bloqueamos el producto mientras se realiza la operación
-            const productoResult = await client.query(
-                `SELECT *
-                 FROM productos_menor_cuantia
-                 WHERE id = $1
-                 FOR UPDATE`,
-                [idProducto]
-            );
 
-            if (productoResult.rows.length === 0) {
-                throw new Error('Producto PMC no encontrado');
+            // ==================================================
+            // OBTENER PRODUCTO
+            // ==================================================
+
+            const producto = await tx.productos_menor_cuantia.findUnique({
+                where: {
+                    id: idProducto
+                }
+            })
+
+
+            if (!producto) {
+                throw new Error('Producto PMC no encontrado')
             }
 
-            const producto = productoResult.rows[0];
 
-            // Validar stock
-            if (producto.cantidad_disponible < cantidad) {
+            // ==================================================
+            // VALIDAR STOCK
+            // ==================================================
+
+            const stockDisponible = producto.cantidad_disponible ?? 0
+
+            if (stockDisponible < cantidad) {
+
                 throw new Error(
-                    `Stock insuficiente. Disponible: ${producto.cantidad_disponible}`
-                );
+                    `Stock insuficiente. Disponible: ${stockDisponible}`
+                )
             }
 
-            // Validar destinatario
+
+            // ==================================================
+            // VALIDAR DESTINATARIO
+            // ==================================================
+
             if (!id_empleado && !id_usuario) {
+
                 throw new Error(
                     'Debe seleccionar un empleado o un usuario'
-                );
+                )
             }
+
 
             if (id_empleado && id_usuario) {
+
                 throw new Error(
                     'La entrega solo puede tener un destinatario'
-                );
+                )
             }
 
-            // Validar área
+
+            // ==================================================
+            // VALIDAR ÁREA
+            // ==================================================
+
             if (!area || !area.trim()) {
+
                 throw new Error(
                     'El área del destinatario es obligatoria'
-                );
+                )
             }
 
-            // Descontar stock
+
+            // ==================================================
+            // DESCONTAR STOCK
+            // ==================================================
+
             const nuevoStock =
-                producto.cantidad_disponible - cantidad;
+                stockDisponible - cantidad
 
-            const stockResult = await client.query(
-                `UPDATE productos_menor_cuantia
-                 SET cantidad_disponible = $1
-                 WHERE id = $2
-                 RETURNING *`,
-                [nuevoStock, idProducto]
-            );
 
-            // Registrar la entrega
-            const entregaResult = await client.query(
-                `INSERT INTO entregas_menor_cuantia
-                    (
-                        id_producto,
+            const productoActualizado =
+                await tx.productos_menor_cuantia.update({
+
+                    where: {
+                        id: idProducto
+                    },
+
+                    data: {
+                        cantidad_disponible: nuevoStock
+                    }
+                })
+
+
+            // ==================================================
+            // REGISTRAR ENTREGA
+            // ==================================================
+
+            const entrega =
+                await tx.entregas_menor_cuantia.create({
+
+                    data: {
+
+                        id_producto: idProducto,
+
                         cantidad,
-                        id_empleado,
-                        id_usuario,
-                        area,
-                        fecha_entrega,
-                        observaciones
-                    )
-                 VALUES
-                    ($1, $2, $3, $4, $5, $6, $7)
-                 RETURNING *`,
-                [
-                    idProducto,
-                    cantidad,
-                    id_empleado || null,
-                    id_usuario || null,
-                    area.trim(),
-                    fecha_entrega || new Date(),
-                    observaciones?.trim() || null
-                ]
-            );
 
-            await client.query('COMMIT');
+                        id_empleado:
+                            id_empleado || null,
+
+                        id_usuario:
+                            id_usuario || null,
+
+                        area: area.trim(),
+
+                        fecha_entrega:
+                            fecha_entrega
+                                ? new Date(fecha_entrega)
+                                : undefined,
+
+                        observaciones:
+                            observaciones?.trim() || null
+                    }
+                })
+
+
+            // ==================================================
+            // DEVOLVER RESULTADO
+            // ==================================================
 
             return {
-                producto: stockResult.rows[0],
-                entrega: entregaResult.rows[0]
-            };
-
-        } catch (error) {
-            await client.query('ROLLBACK');
-            throw error;
-        } finally {
-            client.release();
-        }
+                producto: productoActualizado,
+                entrega
+            }
+        })
     }
+
 
     // =========================================================
     // OBTENER HISTORIAL DE ENTREGAS DE UN EMPLEADO
     // =========================================================
-    async getEntregasPorEmpleado(idEmpleado) {
-        const result = await pool.query(
-            `SELECT
-                e.id_entrega,
-                e.id_producto,
-                p.nombre AS producto,
-                p.descripcion,
-                e.cantidad,
-                e.area,
-                e.fecha_entrega,
-                e.observaciones
-             FROM entregas_menor_cuantia e
-             INNER JOIN productos_menor_cuantia p
-                ON p.id = e.id_producto
-             WHERE e.id_empleado = $1
-             ORDER BY e.fecha_entrega DESC`,
-            [idEmpleado]
-        );
 
-        return result.rows;
+    async getEntregasPorEmpleado(idEmpleado) {
+
+        const entregas =
+            await prisma.entregas_menor_cuantia.findMany({
+
+                where: {
+                    id_empleado: idEmpleado
+                },
+
+                include: {
+                    producto: true
+                },
+
+                orderBy: {
+                    fecha_entrega: 'desc'
+                }
+            })
+
+
+        return entregas.map(entrega => ({
+
+            id_entrega: entrega.id_entrega,
+
+            id_producto: entrega.id_producto,
+
+            producto:
+                entrega.producto?.nombre || null,
+
+            descripcion:
+                entrega.producto?.descripcion || null,
+
+            cantidad: entrega.cantidad,
+
+            area: entrega.area,
+
+            fecha_entrega:
+                entrega.fecha_entrega,
+
+            observaciones:
+                entrega.observaciones
+        }))
     }
+
 
     // =========================================================
     // OBTENER HISTORIAL DE ENTREGAS DE UN USUARIO
     // =========================================================
-    async getEntregasPorUsuario(idUsuario) {
-        const result = await pool.query(
-            `SELECT
-                e.id_entrega,
-                e.id_producto,
-                p.nombre AS producto,
-                p.descripcion,
-                e.cantidad,
-                e.area,
-                e.fecha_entrega,
-                e.observaciones
-             FROM entregas_menor_cuantia e
-             INNER JOIN productos_menor_cuantia p
-                ON p.id = e.id_producto
-             WHERE e.id_usuario = $1
-             ORDER BY e.fecha_entrega DESC`,
-            [idUsuario]
-        );
 
-        return result.rows;
+    async getEntregasPorUsuario(idUsuario) {
+
+        const entregas =
+            await prisma.entregas_menor_cuantia.findMany({
+
+                where: {
+                    id_usuario: idUsuario
+                },
+
+                include: {
+                    producto: true
+                },
+
+                orderBy: {
+                    fecha_entrega: 'desc'
+                }
+            })
+
+
+        return entregas.map(entrega => ({
+
+            id_entrega: entrega.id_entrega,
+
+            id_producto: entrega.id_producto,
+
+            producto:
+                entrega.producto?.nombre || null,
+
+            descripcion:
+                entrega.producto?.descripcion || null,
+
+            cantidad: entrega.cantidad,
+
+            area: entrega.area,
+
+            fecha_entrega:
+                entrega.fecha_entrega,
+
+            observaciones:
+                entrega.observaciones
+        }))
     }
+
 
     // =========================================================
     // HISTORIAL GENERAL DE ENTREGAS PMC
     // =========================================================
+
     async getTodasLasEntregas() {
-        const result = await pool.query(
-            `SELECT
-                e.id_entrega,
-                e.id_producto,
-                p.nombre AS producto,
-                e.cantidad,
-                e.area,
-                e.fecha_entrega,
-                e.observaciones,
 
-                e.id_empleado,
-                emp.nombre AS empleado,
+        const entregas =
+            await prisma.entregas_menor_cuantia.findMany({
 
-                e.id_usuario,
-                u.nombre AS usuario,
-                u.usuario AS nombre_usuario
+                include: {
 
-             FROM entregas_menor_cuantia e
+                    producto: true,
 
-             INNER JOIN productos_menor_cuantia p
-                ON p.id = e.id_producto
+                    empleado: {
+                        select: {
+                            nombre: true
+                        }
+                    },
 
-             LEFT JOIN empleados emp
-                ON emp.id_empleado = e.id_empleado
+                    usuario: {
+                        select: {
+                            nombre: true,
+                            usuario: true
+                        }
+                    }
+                },
 
-             LEFT JOIN usuarios u
-                ON u.id_usuario = e.id_usuario
+                orderBy: {
+                    fecha_entrega: 'desc'
+                }
+            })
 
-             ORDER BY e.fecha_entrega DESC`
-        );
 
-        return result.rows;
+        return entregas.map(entrega => ({
+
+            id_entrega:
+                entrega.id_entrega,
+
+            id_producto:
+                entrega.id_producto,
+
+            producto:
+                entrega.producto?.nombre || null,
+
+            cantidad:
+                entrega.cantidad,
+
+            area:
+                entrega.area,
+
+            fecha_entrega:
+                entrega.fecha_entrega,
+
+            observaciones:
+                entrega.observaciones,
+
+            id_empleado:
+                entrega.id_empleado,
+
+            empleado:
+                entrega.empleado?.nombre || null,
+
+            id_usuario:
+                entrega.id_usuario,
+
+            usuario:
+                entrega.usuario?.nombre || null,
+
+            nombre_usuario:
+                entrega.usuario?.usuario || null
+        }))
     }
 }
 
-module.exports = new PMCRepository();
+
+module.exports = new PMCRepository()
+

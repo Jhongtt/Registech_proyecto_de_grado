@@ -31,13 +31,13 @@ model equipos {
 }
 
 model empleados {
+  id_empleado            String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   nombre                 String                   @db.VarChar(200)
   tipo_documento         String                   @db.VarChar(30)
   documento              String                   @db.VarChar(30)
   correo                 String?                  @db.VarChar(100)
   area                   String                   @db.VarChar(100)
   estado                 String                   @db.VarChar(15)
-  id_empleado            String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   entregas_menor_cuantia entregas_menor_cuantia[]
   prestamos              prestamos[]
 }

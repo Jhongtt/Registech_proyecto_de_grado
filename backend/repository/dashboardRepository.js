@@ -1,90 +1,237 @@
-const db = require('../lib/db')
+
+const { prisma } = require('../lib/prisma')
+
+
+// ======================================================
+// ESTADÍSTICAS GENERALES
+// ======================================================
 
 exports.getStats = async () => {
-    const [totalEquipos, disponibles, asignados, mantenimiento, baja] = await Promise.all([
-        db.query('SELECT COUNT(*)::int as count FROM equipos'),
-        db.query(`SELECT COUNT(*)::int as count FROM equipos WHERE estado = 'Disponible'`),
-        db.query(`SELECT COUNT(*)::int as count FROM equipos WHERE estado = 'Asignado'`),
-        db.query(`SELECT COUNT(*)::int as count FROM equipos WHERE estado = 'En mantenimiento'`),
-        db.query(`SELECT COUNT(*)::int as count FROM equipos WHERE estado = 'Baja'`),
+
+    const [
+        totalEquipos,
+        disponibles,
+        asignados,
+        mantenimiento,
+        baja
+    ] = await Promise.all([
+
+        prisma.equipos.count(),
+
+        prisma.equipos.count({
+            where: {
+                estado: 'Disponible'
+            }
+        }),
+
+        prisma.equipos.count({
+            where: {
+                estado: 'Asignado'
+            }
+        }),
+
+        prisma.equipos.count({
+            where: {
+                estado: 'En mantenimiento'
+            }
+        }),
+
+        prisma.equipos.count({
+            where: {
+                estado: 'Baja'
+            }
+        })
     ])
 
     return {
-        total: totalEquipos.rows[0].count,
-        disponibles: disponibles.rows[0].count,
-        asignados: asignados.rows[0].count,
-        mantenimiento: mantenimiento.rows[0].count,
-        baja: baja.rows[0].count,
+        total: totalEquipos,
+        disponibles,
+        asignados,
+        mantenimiento,
+        baja
     }
 }
-exports.getEquiposPorArea = async () => {
-    const { rows } = await db.query(
-        `SELECT 
-            p.area,
-            COUNT(DISTINCT pe.num_serie)::int AS total
-         FROM prestamos p
-         JOIN prestamo_equipos pe
-            ON p.id_prestamo = pe.id_prestamo
-         WHERE p.estado = 'activo'
-           AND p.area IS NOT NULL
-         GROUP BY p.area
-         ORDER BY total DESC`
-    )
 
-    return rows
+
+// ======================================================
+// EQUIPOS POR ÁREA
+// ======================================================
+
+exports.getEquiposPorArea = async () => {
+
+    const registros = await prisma.prestamo_equipos.findMany({
+        where: {
+            prestamo: {
+                estado: 'activo',
+                area: {
+                    not: null
+                }
+            }
+        },
+
+        select: {
+            num_serie: true,
+
+            prestamo: {
+                select: {
+                    area: true
+                }
+            }
+        }
+    })
+
+
+    const equiposPorArea = {}
+
+    for (const registro of registros) {
+
+        const area = registro.prestamo?.area
+
+        if (!area) continue
+
+        if (!equiposPorArea[area]) {
+            equiposPorArea[area] = new Set()
+        }
+
+        equiposPorArea[area].add(registro.num_serie)
+    }
+
+
+    return Object.entries(equiposPorArea)
+        .map(([area, equipos]) => ({
+            area,
+            total: equipos.size
+        }))
+        .sort((a, b) => b.total - a.total)
 }
+
+
+// ======================================================
+// PRÉSTAMOS POR ÁREA
+// ======================================================
 
 exports.getPrestamosPorArea = async () => {
-    const { rows } = await db.query(
-        `SELECT p.area, COUNT(DISTINCT p.id_prestamo)::int as total
-         FROM prestamos p
-         WHERE p.area IS NOT NULL
-         GROUP BY p.area
-         ORDER BY total DESC`
-    )
 
-    return rows
+    const prestamos = await prisma.prestamos.findMany({
+        where: {
+            area: {
+                not: null
+            }
+        },
+
+        select: {
+            id_prestamo: true,
+            area: true
+        }
+    })
+
+
+    const prestamosPorArea = {}
+
+    for (const prestamo of prestamos) {
+
+        const area = prestamo.area
+
+        if (!area) continue
+
+        if (!prestamosPorArea[area]) {
+            prestamosPorArea[area] = new Set()
+        }
+
+        prestamosPorArea[area].add(prestamo.id_prestamo)
+    }
+
+
+    return Object.entries(prestamosPorArea)
+        .map(([area, prestamosArea]) => ({
+            area,
+            total: prestamosArea.size
+        }))
+        .sort((a, b) => b.total - a.total)
 }
+
+
+// ======================================================
+// EQUIPOS POR ESTADO
+// ======================================================
 
 exports.getEquiposPorEstado = async () => {
-    const { rows } = await db.query(
-        `SELECT estado, COUNT(*)::int as total
-         FROM equipos
-         GROUP BY estado
-         ORDER BY total DESC`
-    )
 
-    return rows
+    const resultados = await prisma.equipos.groupBy({
+        by: ['estado'],
+
+        _count: {
+            _all: true
+        }
+    })
+
+
+    return resultados
+        .map(resultado => ({
+            estado: resultado.estado,
+            total: resultado._count._all
+        }))
+        .sort((a, b) => b.total - a.total)
 }
+
+
+// ======================================================
+// PRÉSTAMOS RECIENTES
+// ======================================================
 
 exports.getPrestamosRecientes = async (limit = 10) => {
-    const { rows } = await db.query(
-        `SELECT 
-            p.id_prestamo,
-            STRING_AGG(pe.num_serie, ', ') AS num_serie,
-            p.fecha_prestamo,
-            p.fecha_devolucion,
-            p.estado,
-            p.observaciones,
-            p.area AS equipo_area,
-            STRING_AGG(e.equipo, ', ') AS equipo,
-            STRING_AGG(e.descripcion, ', ') AS descripcion
-         FROM prestamos p
-         JOIN prestamo_equipos pe 
-            ON p.id_prestamo = pe.id_prestamo
-         JOIN equipos e 
-            ON pe.num_serie = e.num_serie
-         GROUP BY 
-            p.id_prestamo,
-            p.fecha_prestamo,
-            p.fecha_devolucion,
-            p.estado,
-            p.observaciones,
-            p.area
-         ORDER BY p.fecha_prestamo DESC
-         LIMIT $1`,
-        [limit]
-    )
 
-    return rows
+    const prestamos = await prisma.prestamos.findMany({
+
+        take: limit,
+
+        orderBy: {
+            fecha_prestamo: 'desc'
+        },
+
+        include: {
+            equipos: {
+                include: {
+                    equipo: true
+                }
+            }
+        }
+    })
+
+
+    return prestamos.map(prestamo => {
+
+        const equipos = prestamo.equipos || []
+
+        return {
+
+            id_prestamo: prestamo.id_prestamo,
+
+            num_serie: equipos
+                .map(item => item.equipo?.num_serie)
+                .filter(Boolean)
+                .join(', '),
+
+            fecha_prestamo: prestamo.fecha_prestamo,
+
+            fecha_devolucion: prestamo.fecha_devolucion,
+
+            estado: prestamo.estado,
+
+            observaciones: prestamo.observaciones,
+
+            equipo_area: prestamo.area,
+
+            equipo: equipos
+                .map(item => item.equipo?.equipo)
+                .filter(Boolean)
+                .join(', '),
+
+            descripcion: equipos
+                .map(item => item.equipo?.descripcion)
+                .filter(Boolean)
+                .join(', ')
+        }
+    })
 }
+

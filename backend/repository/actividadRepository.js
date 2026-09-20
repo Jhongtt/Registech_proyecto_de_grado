@@ -1,17 +1,33 @@
-const db = require('../lib/db')
+
+const { prisma } = require('../lib/prisma')
 
 exports.getActividadReciente = async (limit = 15) => {
-    const { rows } = await db.query(
-        `SELECT
-            a.usuario,
-            u.nombre AS nombre_usuario,
-            a.accion,
-            a.fecha
-        FROM auditoria a
-        LEFT JOIN usuarios u ON u.usuario = a.usuario
-        ORDER BY a.fecha DESC
-        LIMIT $1`,
-        [limit]
-    )
-    return rows
+
+    const actividades = await prisma.auditoria.findMany({
+        take: limit,
+
+        orderBy: {
+            fecha: 'desc'
+        },
+
+        select: {
+            usuario: true,
+            accion: true,
+            fecha: true,
+
+            usuarioRelacion: {
+                select: {
+                    nombre: true
+                }
+            }
+        }
+    })
+
+    return actividades.map(actividad => ({
+        usuario: actividad.usuario,
+        nombre_usuario: actividad.usuarioRelacion?.nombre || null,
+        accion: actividad.accion,
+        fecha: actividad.fecha
+    }))
 }
+
