@@ -1,9 +1,13 @@
-const db = require('../lib/db')
+
+const { prisma } = require('../lib/prisma')
 
 exports.crearLog = async (usuario, accion) => {
-    const { rows } = await db.query(
-        'INSERT INTO auditoria (usuario, accion) VALUES ($1, $2) RETURNING *',
-        [usuario, accion]
-    )
-    return rows[0]
+
+    return await prisma.auditoria.create({
+        data: {
+            usuario,
+            accion
+        }
+    })
 }
+

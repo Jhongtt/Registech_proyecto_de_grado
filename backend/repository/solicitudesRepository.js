@@ -1,55 +1,154 @@
-const db = require('../lib/db')
 
-exports.crearSolicitud = async (usuario, tipoEquipo, descripcion, justificacion) => {
-    const detalle = [tipoEquipo, descripcion, justificacion && `Justificación: ${justificacion}`]
+const { prisma } = require('../lib/prisma')
+
+
+// ======================================================
+// CREAR SOLICITUD
+// ======================================================
+
+exports.crearSolicitud = async (
+    usuario,
+    tipoEquipo,
+    descripcion,
+    justificacion
+) => {
+
+    const detalle = [
+        tipoEquipo,
+        descripcion,
+        justificacion && `Justificación: ${justificacion}`
+    ]
         .filter(Boolean)
         .join(' | ')
-    const { rows } = await db.query(
-        `INSERT INTO solicitudes (usuario, detalles) VALUES ($1, $2) RETURNING *`,
-        [usuario, detalle]
-    )
-    return rows[0]
+
+
+    return await prisma.solicitudes.create({
+        data: {
+            usuario,
+            detalles: detalle
+        }
+    })
 }
+
+
+// ======================================================
+// OBTENER SOLICITUDES
+// ======================================================
 
 exports.findSolicitudes = async (estado) => {
-    let query = 'SELECT * FROM solicitudes'
-    const params = []
-    if (estado) {
-        query += ' WHERE estado = $1'
-        params.push(estado)
-    }
-    query += ' ORDER BY creado_en DESC'
-    const { rows } = await db.query(query, params)
-    return rows
+
+    return await prisma.solicitudes.findMany({
+
+        where: estado
+            ? {
+                estado
+            }
+            : undefined,
+
+        orderBy: {
+            creado_en: 'desc'
+        }
+    })
 }
+
+
+// ======================================================
+// OBTENER MIS SOLICITUDES
+// ======================================================
 
 exports.findMisSolicitudes = async (usuario) => {
-    const { rows } = await db.query(
-        'SELECT * FROM solicitudes WHERE usuario = $1 ORDER BY creado_en DESC',
-        [usuario]
-    )
-    return rows
+
+    return await prisma.solicitudes.findMany({
+
+        where: {
+            usuario
+        },
+
+        orderBy: {
+            creado_en: 'desc'
+        }
+    })
 }
 
-exports.responderSolicitud = async (id, estado, respuesta) => {
+
+// ======================================================
+// RESPONDER SOLICITUD
+// ======================================================
+
+exports.responderSolicitud = async (
+    id,
+    estado,
+    respuesta
+) => {
+
+    // ==============================================
+    // SI HAY RESPUESTA
+    // ==============================================
+
     if (respuesta) {
-        const { rows } = await db.query(
-            `UPDATE solicitudes SET estado = $1, detalles = CASE
-                 WHEN detalles IS NULL OR detalles = '' THEN $2
-                 ELSE detalles || ' | Respuesta: ' || $2
-             END WHERE id = $3 RETURNING *`,
-            [estado, respuesta, id]
-        )
-        return rows[0]
+
+        const solicitud =
+            await prisma.solicitudes.findUnique({
+                where: {
+                    id
+                }
+            })
+
+
+        if (!solicitud) {
+            return null
+        }
+
+
+        const nuevosDetalles =
+            !solicitud.detalles ||
+            solicitud.detalles === ''
+                ? respuesta
+                : `${solicitud.detalles} | Respuesta: ${respuesta}`
+
+
+        return await prisma.solicitudes.update({
+
+            where: {
+                id
+            },
+
+            data: {
+                estado,
+                detalles: nuevosDetalles
+            }
+        })
     }
-    const { rows } = await db.query(
-        `UPDATE solicitudes SET estado = $1 WHERE id = $2 RETURNING *`,
-        [estado, id]
-    )
-    return rows[0]
+
+
+    // ==============================================
+    // SI NO HAY RESPUESTA
+    // ==============================================
+
+    return await prisma.solicitudes.update({
+
+        where: {
+            id
+        },
+
+        data: {
+            estado
+        }
+    })
 }
+
+
+// ======================================================
+// CONTAR SOLICITUDES PENDIENTES
+// ======================================================
 
 exports.contarPendientes = async () => {
-    const { rows } = await db.query(`SELECT COUNT(*)::int as c FROM solicitudes WHERE estado = 'pendiente'`)
-    return rows[0].c
+
+    return await prisma.solicitudes.count({
+
+        where: {
+            estado: 'pendiente'
+        }
+    })
 }
+

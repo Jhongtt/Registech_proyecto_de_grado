@@ -1751,7 +1751,7 @@ async function enviarCorreo({
 
 
     console.log(
-        `📧 Correo enviado a ${para}`
+        `Correo enviado a ${para}`
     )
 
 
@@ -1879,13 +1879,13 @@ async function enviarReciboDevolucion(
             })
 
             console.log(
-                `📎 Evidencia adjuntada al correo: ${rutaEvidencia}`
+                `Evidencia adjuntada al correo: ${rutaEvidencia}`
             )
 
         } else {
 
             console.warn(
-                `⚠️ No se encontró la evidencia en: ${rutaEvidencia}`
+                `No se encontró la evidencia en: ${rutaEvidencia}`
             )
         }
     }
@@ -1919,7 +1919,7 @@ async function verificarConexion() {
         console.log(' Conexión SMTP con Brevo correcta')
 
         console.log(
-            '✅ Conexión SMTP con Brevo correcta'
+            'Conexión SMTP con Brevo correcta'
         )
 
         return true

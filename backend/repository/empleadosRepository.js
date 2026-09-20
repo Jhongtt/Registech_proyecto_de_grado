@@ -1,111 +1,148 @@
-const db = require('../lib/db')
+const { prisma } = require('../lib/prisma')
+
+
+// ======================================================
+// OBTENER TODOS LOS EMPLEADOS
+// ======================================================
 
 exports.findAll = async () => {
-    const { rows } = await db.query(`
-        SELECT
-            id_empleado,
-            nombre,
-            tipo_documento,
-            documento,
-            correo,
-            area,
-            estado
-        FROM empleados
-        ORDER BY nombre ASC
-    `)
 
-    return rows
+    return await prisma.empleados.findMany({
+        select: {
+            id_empleado: true,
+            nombre: true,
+            tipo_documento: true,
+            documento: true,
+            correo: true,
+            area: true,
+            estado: true
+        },
+
+        orderBy: {
+            nombre: 'asc'
+        }
+    })
 }
+
+
+// ======================================================
+// BUSCAR EMPLEADO POR ID
+// ======================================================
 
 exports.findById = async (id) => {
-    const { rows } = await db.query(
-        `SELECT * FROM empleados WHERE id_empleado = $1`,
-        [id]
-    )
 
-    return rows[0] || null
+    return await prisma.empleados.findUnique({
+        where: {
+            id_empleado: id
+        }
+    })
 }
+
+
+// ======================================================
+// BUSCAR EMPLEADO POR DOCUMENTO
+// ======================================================
 
 exports.findByDocumento = async (documento) => {
-    const { rows } = await db.query(
-        `SELECT * FROM empleados WHERE documento = $1`,
-        [documento]
-    )
 
-    return rows[0] || null
+    return await prisma.empleados.findFirst({
+        where: {
+            documento
+        }
+    })
 }
+
+
+// ======================================================
+// CREAR EMPLEADO
+// ======================================================
 
 exports.create = async (data) => {
-    const { rows } = await db.query(
-        `INSERT INTO empleados
-            (nombre, tipo_documento, documento, correo, area, estado)
-         VALUES ($1, $2, $3, $4, $5, $6)
-         RETURNING *`,
-        [
-            data.nombre,
-            data.tipo_documento,
-            data.documento,
-            data.correo || null,
-            data.area,
-            data.estado || 'activo'
-        ]
-    )
 
-    return rows[0]
+    return await prisma.empleados.create({
+        data: {
+            nombre: data.nombre,
+            tipo_documento: data.tipo_documento,
+            documento: data.documento,
+            correo: data.correo || null,
+            area: data.area,
+            estado: data.estado || 'activo'
+        }
+    })
 }
+
+
+// ======================================================
+// ACTUALIZAR EMPLEADO
+// ======================================================
 
 exports.update = async (id, data) => {
-    const fields = []
-    const values = []
-    let idx = 1
 
-    for (const [key, value] of Object.entries(data)) {
-        fields.push(`${key} = $${idx}`)
-        values.push(value)
-        idx++
-    }
+    return await prisma.empleados.update({
+        where: {
+            id_empleado: id
+        },
 
-    values.push(id)
-
-    const { rows } = await db.query(
-        `UPDATE empleados
-         SET ${fields.join(', ')}
-         WHERE id_empleado = $${idx}
-         RETURNING *`,
-        values
-    )
-
-    return rows[0]
+        data
+    })
 }
+
+
+// ======================================================
+// ELIMINAR EMPLEADO
+// ======================================================
 
 exports.delete = async (id) => {
 
-    // Verificar si el empleado tiene historial de préstamos
-    const { rows } = await db.query(
-        `SELECT COUNT(*) AS total
-         FROM prestamos
-         WHERE id_empleado = $1`,
-        [id]
-    )
+    // ==================================================
+    // VERIFICAR SI TIENE HISTORIAL DE PRÉSTAMOS
+    // ==================================================
 
-    const totalPrestamos = Number(rows[0].total)
+    const totalPrestamos = await prisma.prestamos.count({
+        where: {
+            id_empleado: id
+        }
+    })
 
-    // Si tiene cualquier préstamo, no se puede eliminar
+
+    // ==================================================
+    // SI TIENE PRÉSTAMOS, NO SE PUEDE ELIMINAR
+    // ==================================================
+
     if (totalPrestamos > 0) {
+
         const error = new Error('EMPLEADO_CON_HISTORIAL')
+
         throw error
     }
 
-    // Si nunca ha tenido préstamos, sí se puede eliminar
-    const { rowCount } = await db.query(
-        `DELETE FROM empleados
-         WHERE id_empleado = $1`,
-        [id]
-    )
 
-    if (rowCount === 0) {
-        const error = new Error('NOT_FOUND')
-        error.code = 'P2025'
+    // ==================================================
+    // ELIMINAR EMPLEADO
+    // ==================================================
+
+    try {
+
+        await prisma.empleados.delete({
+            where: {
+                id_empleado: id
+            }
+        })
+
+    } catch (error) {
+
+        // Prisma P2025 = registro no encontrado
+
+        if (error.code === 'P2025') {
+
+            const notFoundError = new Error('NOT_FOUND')
+
+            notFoundError.code = 'P2025'
+
+            throw notFoundError
+        }
+
         throw error
     }
 }
+

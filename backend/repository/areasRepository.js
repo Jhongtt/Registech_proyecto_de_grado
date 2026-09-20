@@ -1,19 +1,21 @@
-const db = require('../lib/db')
+
+const { prisma } = require('../lib/prisma')
+
 
 // ======================================================
 // OBTENER TODAS LAS ÁREAS
 // ======================================================
 
 exports.findAll = async () => {
-    const { rows } = await db.query(
-        `
-        SELECT area
-        FROM areas
-        ORDER BY area
-        `
-    )
 
-    return rows
+    return await prisma.areas.findMany({
+        select: {
+            area: true
+        },
+        orderBy: {
+            area: 'asc'
+        }
+    })
 }
 
 
@@ -23,16 +25,16 @@ exports.findAll = async () => {
 
 exports.exists = async (area) => {
 
-    const { rows } = await db.query(
-        `
-        SELECT 1
-        FROM areas
-        WHERE LOWER(area) = LOWER($1)
-        `,
-        [area]
-    )
+    const cantidad = await prisma.areas.count({
+        where: {
+            area: {
+                equals: area,
+                mode: 'insensitive'
+            }
+        }
+    })
 
-    return rows.length > 0
+    return cantidad > 0
 }
 
 
@@ -42,21 +44,17 @@ exports.exists = async (area) => {
 
 exports.create = async (area) => {
 
-    await db.query(
-        `
-        INSERT INTO areas (area)
-        VALUES ($1)
-        `,
-        [area]
-    )
+    await prisma.areas.create({
+        data: {
+            area
+        }
+    })
 }
 
 
 // ======================================================
 // RENOMBRAR ÁREA
 // ======================================================
-//
-// IMPORTANTE:
 //
 // NO modificamos equipos.area.
 //
@@ -67,7 +65,7 @@ exports.create = async (area) => {
 // Cuando un equipo está prestado, su departamento se obtiene
 // desde prestamos.area.
 //
-// Al renombrar un departamento sí actualizamos:
+// Al renombrar un departamento actualizamos:
 //
 //   - usuarios.area
 //   - empleados.area
@@ -78,104 +76,78 @@ exports.create = async (area) => {
 
 exports.rename = async (viejaLimpia, nuevaLimpia) => {
 
-    const client = await db.pool.connect()
-
-    try {
-
-        await client.query('BEGIN')
-
+    return await prisma.$transaction(async (tx) => {
 
         // ==================================================
         // ACTUALIZAR USUARIOS
         // ==================================================
 
-        await client.query(
-            `
-            UPDATE usuarios
-            SET area = $1
-            WHERE LOWER(area) = LOWER($2)
-            `,
-            [
-                nuevaLimpia,
-                viejaLimpia
-            ]
-        )
+        await tx.usuarios.updateMany({
+            where: {
+                area: {
+                    equals: viejaLimpia,
+                    mode: 'insensitive'
+                }
+            },
+            data: {
+                area: nuevaLimpia
+            }
+        })
 
 
         // ==================================================
         // ACTUALIZAR EMPLEADOS
         // ==================================================
 
-        await client.query(
-            `
-            UPDATE empleados
-            SET area = $1
-            WHERE LOWER(area) = LOWER($2)
-            `,
-            [
-                nuevaLimpia,
-                viejaLimpia
-            ]
-        )
+        await tx.empleados.updateMany({
+            where: {
+                area: {
+                    equals: viejaLimpia,
+                    mode: 'insensitive'
+                }
+            },
+            data: {
+                area: nuevaLimpia
+            }
+        })
 
 
         // ==================================================
         // ACTUALIZAR PRÉSTAMOS
         // ==================================================
-        //
-        // Esto es importante porque los equipos prestados
-        // toman su departamento desde prestamos.area.
-        //
-        // Si renombramos "Sistemas" a "Tecnología", los
-        // préstamos activos deben pasar a "Tecnología".
-        //
-        // ==================================================
 
-        await client.query(
-            `
-            UPDATE prestamos
-            SET area = $1
-            WHERE LOWER(area) = LOWER($2)
-            `,
-            [
-                nuevaLimpia,
-                viejaLimpia
-            ]
-        )
+        await tx.prestamos.updateMany({
+            where: {
+                area: {
+                    equals: viejaLimpia,
+                    mode: 'insensitive'
+                }
+            },
+            data: {
+                area: nuevaLimpia
+            }
+        })
 
 
         // ==================================================
-        // ACTUALIZAR EL DEPARTAMENTO
+        // ACTUALIZAR EL ÁREA
         // ==================================================
 
-        const resultado = await client.query(
-            `
-            UPDATE areas
-            SET area = $1
-            WHERE LOWER(area) = LOWER($2)
-            `,
-            [
-                nuevaLimpia,
-                viejaLimpia
-            ]
-        )
+        const resultado = await tx.areas.updateMany({
+            where: {
+                area: {
+                    equals: viejaLimpia,
+                    mode: 'insensitive'
+                }
+            },
+            data: {
+                area: nuevaLimpia
+            }
+        })
 
 
-        await client.query('COMMIT')
-
-        return resultado.rowCount > 0
-
-    } catch (error) {
-
-        await client.query('ROLLBACK')
-
-        throw error
-
-    } finally {
-
-        client.release()
-
-    }
+        return resultado.count > 0
+    })
 }
 
 
@@ -185,15 +157,16 @@ exports.rename = async (viejaLimpia, nuevaLimpia) => {
 
 exports.remove = async (area) => {
 
-    const { rowCount } = await db.query(
-        `
-        DELETE FROM areas
-        WHERE LOWER(area) = LOWER($1)
-        `,
-        [area]
-    )
+    const resultado = await prisma.areas.deleteMany({
+        where: {
+            area: {
+                equals: area,
+                mode: 'insensitive'
+            }
+        }
+    })
 
-    return rowCount > 0
+    return resultado.count > 0
 }
 
 
@@ -205,48 +178,81 @@ exports.remove = async (area) => {
 //
 //   1. Usuarios pertenecientes al departamento.
 //   2. Empleados pertenecientes al departamento.
-//   3. Equipos actualmente prestados a personas de ese
-//      departamento.
+//   3. Equipos relacionados con el departamento.
 //
 // IMPORTANTE:
 //
-// NO contamos equipos.area.
+// NO usamos equipos.area para determinar la pertenencia
+// de un equipo.
 //
-// Un equipo disponible puede tener un valor antiguo en
-// equipos.area y aun así NO pertenece al departamento.
+// Los equipos disponibles pertenecen al inventario general.
+// Los equipos prestados toman el área desde prestamos.area.
 //
 // ======================================================
 
 exports.contarUso = async (area) => {
 
-    const { rows } = await db.query(
-        `
-        SELECT
+    const [
+        usuarios,
+        empleados,
+        prestamos
+    ] = await Promise.all([
 
-            (
-                SELECT COUNT(*)::int
-                FROM usuarios
-                WHERE LOWER(area) = LOWER($1)
-            ) AS usuarios,
+        // ==============================================
+        // USUARIOS
+        // ==============================================
+
+        prisma.usuarios.count({
+            where: {
+                area: {
+                    equals: area,
+                    mode: 'insensitive'
+                }
+            }
+        }),
 
 
-            (
-                SELECT COUNT(*)::int
-                FROM empleados
-                WHERE LOWER(area) = LOWER($1)
-            ) AS empleados,
+        // ==============================================
+        // EMPLEADOS
+        // ==============================================
+
+        prisma.empleados.count({
+            where: {
+                area: {
+                    equals: area,
+                    mode: 'insensitive'
+                }
+            }
+        }),
 
 
-            (
-                SELECT COUNT(*)::int
-                FROM equipos e
-                WHERE LOWER(e.area) = LOWER($1)
-                  AND e.estado <> 'Baja'
-            ) AS equipos
+        // ==============================================
+        // EQUIPOS PRESTADOS
+        // ==============================================
 
-        `,
-        [area]
-    )
+        prisma.prestamo_equipos.count({
+            where: {
+                prestamo: {
+                    area: {
+                        equals: area,
+                        mode: 'insensitive'
+                    },
+                    estado: 'activo'
+                },
+                equipo: {
+                    estado: {
+                        not: 'Baja'
+                    }
+                }
+            }
+        })
+    ])
 
-    return rows[0]
+
+    return {
+        usuarios,
+        empleados,
+        equipos: prestamos
+    }
 }
+
