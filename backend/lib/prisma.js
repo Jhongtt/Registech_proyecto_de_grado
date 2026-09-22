@@ -14,4 +14,5 @@ const prisma = new PrismaClient({
     adapter
 })
 
-module.exports = prisma
+module.exports = prisma;
+module.exports.prisma = prisma;
