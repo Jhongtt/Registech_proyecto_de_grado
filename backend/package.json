@@ -16,7 +16,8 @@
   "scripts": {
     "start": "node index.js",
     "test": "jest --forceExit --setupFilesAfterEnv ./tests/setup.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",
