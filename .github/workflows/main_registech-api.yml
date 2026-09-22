@@ -24,6 +24,8 @@ jobs:
           node-version: '22.x'
 
       - name: npm install, build, and test
+        env:
+          DATABASE_URL: 'postgresql://dummy:dummy@localhost/dummy'
         run: |
           cd backend
           npm install
