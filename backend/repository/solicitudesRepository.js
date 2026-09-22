@@ -89,9 +89,7 @@ exports.responderSolicitud = async (
 
         const solicitud =
             await prisma.solicitudes.findUnique({
-                where: {
-                    id
-                }
+                where: { id: parseInt(id, 10) }
             })
 
 
@@ -109,9 +107,7 @@ exports.responderSolicitud = async (
 
         return await prisma.solicitudes.update({
 
-            where: {
-                id
-            },
+            where: { id: parseInt(id, 10) },
 
             data: {
                 estado,
@@ -127,9 +123,7 @@ exports.responderSolicitud = async (
 
     return await prisma.solicitudes.update({
 
-        where: {
-            id
-        },
+        where: { id: parseInt(id, 10) },
 
         data: {
             estado

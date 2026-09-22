@@ -15,17 +15,13 @@ exports.getActividadReciente = async (limit = 15) => {
             accion: true,
             fecha: true,
 
-            usuarioRelacion: {
-                select: {
-                    nombre: true
-                }
-            }
+            
         }
     })
 
     return actividades.map(actividad => ({
         usuario: actividad.usuario,
-        nombre_usuario: actividad.usuarioRelacion?.nombre || null,
+        nombre_usuario: null,
         accion: actividad.accion,
         fecha: actividad.fecha
     }))
