@@ -129,10 +129,10 @@ exports.crearPrestamo = async (req, res) => {
                         prestamoCompleto.correo_usuario
 
                     if (correo) {
-                        await emailService.enviarReciboPrestamo({
+                        emailService.enviarReciboPrestamo({
                             ...prestamoCompleto,
                             correo
-                        })
+                        }).catch(e => console.error('Background email error:', e))
 
                         correoEnviado = true
 
@@ -356,7 +356,7 @@ exports.devolverPrestamo = async (req, res) => {
                         prestamoCompleto.correo_usuario
 
                     if (correo) {
-                        await emailService.enviarReciboDevolucion({
+                        emailService.enviarReciboDevolucion({
                             ...prestamoCompleto,
                             correo,
                             fecha_devolucion_correo: new Date(),
@@ -366,7 +366,7 @@ exports.devolverPrestamo = async (req, res) => {
                                 ) || [],
                             observaciones,
                             evidencia
-                        })
+                        }).catch(e => console.error('Background email error:', e))
 
                         correoEnviado = true
 
@@ -534,7 +534,7 @@ exports.devolverEquipo = async (req, res) => {
                         prestamoCompleto.correo_usuario
 
                     if (correo) {
-                        await emailService.enviarReciboDevolucion({
+                        emailService.enviarReciboDevolucion({
                             ...prestamoCompleto,
                             correo,
                             fecha_devolucion_correo: new Date(),
@@ -542,7 +542,7 @@ exports.devolverEquipo = async (req, res) => {
                                 equiposDevueltosCorreo,
                             observaciones,
                             evidencia
-                        })
+                        }).catch(e => console.error('Background email error:', e))
 
                         correoEnviado = true
 

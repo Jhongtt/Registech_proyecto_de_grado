@@ -3,11 +3,9 @@ const { sanitizarTexto, sanitizarHtml } = require('../utils/sanitize')
 
 // Valida formato YYYY-MM-DD; devuelve null si viene vacío o inválido
 function validarFecha(valor) {
-    if (!valor) return null
-
-    return /^\d{4}-\d{2}-\d{2}$/.test(String(valor))
-        ? String(valor)
-        : null
+    if (!valor) return null;
+    const d = new Date(valor);
+    return isNaN(d.getTime()) ? null : d;
 }
 
 

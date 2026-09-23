@@ -18,10 +18,8 @@ export default function ModalPrestamo({
     const [idEmpleadoSeleccionado, setIdEmpleadoSeleccionado] = useState('')
     const [idUsuarioSeleccionado, setIdUsuarioSeleccionado] = useState('')
     const [areaPrestamo, setAreaPrestamo] = useState(equipo.area || '')
-    const [fechaInicio, setFechaInicio] = useState(toISODate(new Date()))
-    const [fechaLimite, setFechaLimite] = useState(
-        toISODate(new Date(Date.now() + 7 * 86400000))
-    )
+    const [fechaInicio, setFechaInicio] = useState(new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16))
+    const [fechaLimite, setFechaLimite] = useState(new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000 + 7 * 86400000).toISOString().slice(0, 16))
     const [enviarCorreo, setEnviarCorreo] = useState(true)
     const [enviando, setEnviando] = useState(false)
 
@@ -338,10 +336,10 @@ export default function ModalPrestamo({
                                         <div className="col-6">
 
                                             <input
-                                                type="date"
+                                                type="datetime-local"
                                                 className="form-control"
                                                 value={fechaInicio}
-                                                min={toISODate(new Date())}
+                                                min={new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}
                                                 onChange={(e) => {
                                                     setFechaInicio(e.target.value)
 
@@ -365,7 +363,7 @@ export default function ModalPrestamo({
                                         <div className="col-6">
 
                                             <input
-                                                type="date"
+                                                type="datetime-local"
                                                 className="form-control"
                                                 value={fechaLimite}
                                                 min={fechaInicio}

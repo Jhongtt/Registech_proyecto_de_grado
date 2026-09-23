@@ -28,7 +28,7 @@ const diasRestantes = (fecha) => {
     const limite = String(fecha).substring(0, 10)
 
     return Math.round(
-        (new Date(limite) - new Date(toISODate(new Date()))) / 86400000
+        (new Date(limite) - new Date(new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16))) / 86400000
     )
 }
 
@@ -107,15 +107,11 @@ const Prestamos = () => {
     const [areaPrestamo, setAreaPrestamo] = useState("")
 
     const [fechaInicio, setFechaInicio] = useState(
-        toISODate(new Date())
+        new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)
     )
 
     const [fechaLimite, setFechaLimite] = useState(
-        toISODate(
-            new Date(
-                Date.now() + 7 * 86400000
-            )
-        )
+        new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000 + 7 * 86400000).toISOString().slice(0, 16)
     )
 
     const [observaciones, setObservaciones] = useState("")
@@ -251,15 +247,11 @@ const Prestamos = () => {
         setAreaPrestamo("")
 
         setFechaInicio(
-            toISODate(new Date())
+            new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)
         )
 
         setFechaLimite(
-            toISODate(
-                new Date(
-                    Date.now() + 7 * 86400000
-                )
-            )
+            new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000 + 7 * 86400000).toISOString().slice(0, 16)
         )
 
         setObservaciones("")
@@ -2397,10 +2389,10 @@ const Prestamos = () => {
                                             </label>
 
                                             <input
-                                                type="date"
+                                                type="datetime-local"
                                                 className="form-control"
                                                 value={fechaInicio}
-                                                min={toISODate(new Date())}
+                                                min={new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}
                                                 onChange={e => {
 
                                                     setFechaInicio(
@@ -2429,7 +2421,7 @@ const Prestamos = () => {
                                             </label>
 
                                             <input
-                                                type="date"
+                                                type="datetime-local"
                                                 className="form-control"
                                                 value={fechaLimite}
                                                 min={fechaInicio}
