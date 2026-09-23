@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import axios from 'axios'
 import Swal from 'sweetalert2'
 import { API_ROUTES } from '../api/apiRoutes'
@@ -109,7 +109,7 @@ const Departamentos = () => {
 
 
     // ======================================================
-    // OBTENER ÃREA DEL PRÃ‰STAMO
+    // OBTENER ÁREA DEL PRÉSTAMO
     // ======================================================
     //
     // IMPORTANTE:
@@ -117,7 +117,7 @@ const Departamentos = () => {
     // NO usamos equipos.area.
     //
     // El departamento de un equipo prestado se determina
-    // mediante el Ã¡rea guardada en el prÃ©stamo.
+    // mediante el área guardada en el préstamo.
     //
     // prestamos.area
     //
@@ -242,7 +242,7 @@ const Departamentos = () => {
 
 
     // ======================================================
-    // OBTENER USUARIOS DEL ÃREA
+    // OBTENER USUARIOS DEL ÁREA
     // ======================================================
 
     const obtenerUsuariosArea = (area) => {
@@ -266,7 +266,7 @@ const Departamentos = () => {
 
 
     // ======================================================
-    // OBTENER EMPLEADOS DEL ÃREA
+    // OBTENER EMPLEADOS DEL ÁREA
     // ======================================================
 
     const obtenerEmpleadosArea = (area) => {
@@ -290,7 +290,7 @@ const Departamentos = () => {
 
 
     // ======================================================
-    // CONTAR EQUIPOS DEL ÃREA
+    // CONTAR EQUIPOS DEL ÁREA
     // ======================================================
 const contarEquipos = (area) => {
     return obtenerEquiposArea(area).length
@@ -298,7 +298,7 @@ const contarEquipos = (area) => {
 
 
     // ======================================================
-    // CONTAR USUARIOS DEL ÃREA
+    // CONTAR USUARIOS DEL ÁREA
     // ======================================================
 
     const contarUsuarios = (area) => {
@@ -307,7 +307,7 @@ const contarEquipos = (area) => {
 
 
     // ======================================================
-    // CONTAR EMPLEADOS DEL ÃREA
+    // CONTAR EMPLEADOS DEL ÁREA
     // ======================================================
 
     const contarEmpleados = (area) => {
@@ -390,7 +390,7 @@ const contarEquipos = (area) => {
 
             Swal.fire({
                 icon: 'warning',
-                title: 'Nombre invÃ¡lido',
+                title: 'Nombre inválido',
                 text: 'El nombre debe tener al menos 2 caracteres'
             })
 
@@ -409,7 +409,7 @@ const contarEquipos = (area) => {
             await Swal.fire({
                 icon: 'success',
                 title: 'Departamento creado',
-                text: 'El departamento se creÃ³ correctamente',
+                text: 'El departamento se creó correctamente',
                 timer: 1800,
                 showConfirmButton: false
             })
@@ -492,7 +492,7 @@ const contarEquipos = (area) => {
 
             Swal.fire({
                 icon: 'warning',
-                title: 'Nombre invÃ¡lido',
+                title: 'Nombre inválido',
                 text: 'El nombre debe tener al menos 2 caracteres'
             })
 
@@ -511,7 +511,7 @@ const contarEquipos = (area) => {
             await Swal.fire({
                 icon: 'success',
                 title: 'Departamento actualizado',
-                text: 'El departamento se renombrÃ³ correctamente',
+                text: 'El departamento se renombró correctamente',
                 timer: 1800,
                 showConfirmButton: false
             })
@@ -593,15 +593,15 @@ const contarEquipos = (area) => {
             icon: 'warning',
 
             title:
-                `Â¿Eliminar "${area}"?`,
+                `¿Eliminar "${area}"?`,
 
             text:
-                'Esta acciÃ³n no se puede deshacer.',
+                'Esta acción no se puede deshacer.',
 
             showCancelButton: true,
 
             confirmButtonText:
-                'SÃ­, eliminar',
+                'Sí, eliminar',
 
             cancelButtonText:
                 'Cancelar',
@@ -623,7 +623,7 @@ const contarEquipos = (area) => {
             await Swal.fire({
                 icon: 'success',
                 title: 'Departamento eliminado',
-                text: 'El departamento se eliminÃ³ correctamente',
+                text: 'El departamento se eliminó correctamente',
                 timer: 1800,
                 showConfirmButton: false
             })
@@ -887,14 +887,31 @@ const contarEquipos = (area) => {
                                             </div>
 
 
-                                            {/* MENÃš */}
+                                            {/* MENÚ */}
 
-                                            <div className="d-flex gap-2"><button className="btn btn-sm btn-outline-primary" type="button" title="Editar" onClick={() => abrirEditar(area)}><i className="bi bi-pencil"></i></button><button className="btn btn-sm btn-outline-danger" type="button" title="Eliminar" onClick={() => eliminarDepartamento(area)}><i className="bi bi-trash"></i></button></div>
+                                            <div className="d-flex gap-2">
+                                                  <button
+                                                      className="btn btn-sm btn-outline-primary"
+                                                      type="button"
+                                                      title="Editar"
+                                                      onClick={() => abrirEditar(area)}
+                                                  >
+                                                      <i className="bi bi-pencil"></i>
+                                                  </button>
+                                                  <button
+                                                      className="btn btn-sm btn-outline-danger"
+                                                      type="button"
+                                                      title="Eliminar"
+                                                      onClick={() => eliminarDepartamento(area)}
+                                                  >
+                                                      <i className="bi bi-trash"></i>
+                                                  </button>
+                                              </div>
 
                                         </div>
 
 
-                                        {/* ESTADÃSTICAS */}
+                                        {/* ESTADÍSTICAS */}
 
                                         <div className="row g-2 mb-3">
 
@@ -957,7 +974,7 @@ const contarEquipos = (area) => {
                                         </div>
 
 
-                                        {/* INFORMACIÃ“N */}
+                                        {/* INFORMACIÓN */}
 
                                         <div className="mb-3">
 
@@ -966,7 +983,7 @@ const contarEquipos = (area) => {
                                                 <i className="bi bi-info-circle me-2"></i>
 
                                                 <span>
-                                                     Los equipos se muestran aquÃ­ mientras estÃ©n prestados
+                                                     Los equipos se muestran aquí mientras estén prestados
         a personas de este departamento.
 
                                                 </span>
@@ -976,7 +993,7 @@ const contarEquipos = (area) => {
                                         </div>
 
 
-                                        {/* BOTÃ“N DETALLES */}
+                                        {/* BOTÓN DETALLES */}
 
                                         <button
                                             type="button"
@@ -1170,9 +1187,9 @@ const contarEquipos = (area) => {
 
                                         <i className="bi bi-info-circle me-2"></i>
 
-                                        Al cambiar el nombre, tambiÃ©n se
-                                        actualizarÃ¡ el departamento de los
-                                        empleados, usuarios y prÃ©stamos
+                                        Al cambiar el nombre, también se
+                                        actualizará el departamento de los
+                                        empleados, usuarios y préstamos
                                         asociados.
 
                                     </div>
@@ -1481,7 +1498,7 @@ const contarEquipos = (area) => {
                                                                     <i className="bi bi-calendar-check me-2 text-muted"></i>
 
                                                                     <strong>
-                                                                        Fecha del prÃ©stamo:
+                                                                        Fecha del préstamo:
                                                                     </strong>{' '}
 
                                                                     {formatearFecha(
@@ -1496,14 +1513,14 @@ const contarEquipos = (area) => {
                                                                     <i className="bi bi-calendar-event me-2 text-muted"></i>
 
                                                                     <strong>
-                                                                        Fecha lÃ­mite:
+                                                                        Fecha límite:
                                                                     </strong>{' '}
 
                                                                     {equipo.fecha_devolucion
                                                                         ? formatearFecha(
                                                                             equipo.fecha_devolucion
                                                                         )
-                                                                        : 'Sin fecha lÃ­mite'}
+                                                                        : 'Sin fecha límite'}
 
                                                                 </div>
 
@@ -1532,7 +1549,7 @@ const contarEquipos = (area) => {
                                                                         <i className="bi bi-card-text me-2 text-muted"></i>
 
                                                                         <strong>
-                                                                            DescripciÃ³n:
+                                                                            Descripción:
                                                                         </strong>{' '}
 
                                                                         {equipo.descripcion}
@@ -1841,4 +1858,3 @@ const contarEquipos = (area) => {
 }
 
 export default Departamentos
-
