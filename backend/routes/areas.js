@@ -1,4 +1,4 @@
-const express = require('express')
+﻿const express = require('express')
 const router = express.Router()
 const { getAreas, createArea, updateArea, deleteArea } = require('../controllers/areasController')
 const { authMiddleware, requireRol } = require('../middlewares/auth')
@@ -7,7 +7,7 @@ const { crearAreaSchema, actualizarAreaSchema } = require('../schemas/areas.sche
 
 router.get('/areas', authMiddleware, getAreas)
 router.post('/areas', authMiddleware, requireRol('admin'), validate(crearAreaSchema), createArea)
-router.put('/areas/:area(*)', authMiddleware, requireRol('admin'), validate(actualizarAreaSchema), updateArea)
-router.delete('/areas/:area(*)', authMiddleware, requireRol('admin'), deleteArea)
+router.put('/areas/:area', authMiddleware, requireRol('admin'), validate(actualizarAreaSchema), updateArea)
+router.delete('/areas/:area', authMiddleware, requireRol('admin'), deleteArea)
 
 module.exports = router

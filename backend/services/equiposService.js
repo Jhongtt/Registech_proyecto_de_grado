@@ -652,10 +652,6 @@ exports.buscarMantenimientos = async (
     const reportes =
         await prisma.historial_mantenimientos.findMany({
             where: {
-                solucion: {
-                    not: null
-                },
-
                 OR: [
                     {
                         id_historial: {

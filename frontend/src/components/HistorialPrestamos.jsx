@@ -45,8 +45,7 @@ const HistorialPrestamos = () => {
     const filteredPrestamos = prestamos.filter(p => {
         const texto = filter.toLowerCase()
         const matchTexto = !texto ||
-            p.num_serie?.toLowerCase().includes(texto) ||
-            p.equipo?.toLowerCase().includes(texto) ||
+            (p.equipos || []).some(e => e.num_serie?.toLowerCase().includes(texto) || e.equipo?.toLowerCase().includes(texto)) ||
             (p.usuario || p.empleado || '').toLowerCase().includes(texto)
         const matchEstado = !filtroEstado || p.estado === filtroEstado
         return matchTexto && matchEstado
@@ -134,10 +133,14 @@ const HistorialPrestamos = () => {
                                     const duracion = getDuracion(p)
                                     const situacion = getSituacion(p)
                                     return (
-                                        <tr key={`${p.id_prestamo}-${p.num_serie}`}>
+                                        <tr key={p.id_prestamo}>
                                             <td>
-                                                <div className="fw-semibold">{p.equipo || '-'}</div>
-                                                <code className="equipo-card__ns">{p.num_serie}</code>
+                                                {(p.equipos || []).map((e, idx) => (
+                                                    <div key={idx} className="mb-1">
+                                                        <div className="fw-semibold">{e.equipo || '-'}</div>
+                                                        <code className="equipo-card__ns">{e.num_serie}</code>
+                                                    </div>
+                                                ))}
                                             </td>
                                             <td>{p.usuario || p.empleado || '-'}</td>
                                             <td>{String(p.fecha_prestamo).substring(0, 10)}</td>

@@ -388,7 +388,7 @@ describe('5. RECUPERACIÓN CONTRASEÑA', () => {
 // 6. ÁREAS CRUD
 // ============================================================
 describe('6. ÁREAS', () => {
-    testAreaName = 'Area_E2E_' + Date.now()
+    testAreaName = 'Area E Dos E'
 
     it('GET /api/areas → lista', TEST('AREAS', 'GET areas', async () => {
         const res = await rq(adminToken, adminCsrf, adminCookies)('get', '/api/areas')
@@ -403,9 +403,9 @@ describe('6. ÁREAS', () => {
 
     it('PUT actualizar área', TEST('AREAS', 'PUT actualizar area', async () => {
         const res = await rq(adminToken, adminCsrf, adminCookies)('put', '/api/areas/' + encodeURIComponent(testAreaName))
-            .send({ area: testAreaName + '_v2' })
+            .send({ area: testAreaName + ' vdos' })
         const ok = res.status === 200
-        if (ok) testAreaName = testAreaName + '_v2'
+        if (ok) testAreaName = testAreaName + ' vdos'
         return assert('AREAS', 'Actualizar area', ok, res.status)
     }))
 
