@@ -31,8 +31,8 @@ function authMiddleware(req, res, next) {
 
         res.cookie('token', newToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            secure: true,
+            sameSite: 'none',
             path: '/',
             maxAge: 15 * 60 * 1000 // 15 MINUTOS
         })
