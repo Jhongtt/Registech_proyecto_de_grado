@@ -30,16 +30,16 @@ const crearPrestamoSchema = z.object({
 
         fecha_inicio: z.string()
             .regex(
-                /^\d{4}-\d{2}-\d{2}$/,
-                'La fecha debe tener formato YYYY-MM-DD'
+                /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/,
+                'La fecha debe tener formato YYYY-MM-DD o YYYY-MM-DDTHH:mm'
             )
             .optional()
             .nullable(),
 
         fecha_limite: z.string()
             .regex(
-                /^\d{4}-\d{2}-\d{2}$/,
-                'La fecha debe tener formato YYYY-MM-DD'
+                /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/,
+                'La fecha debe tener formato YYYY-MM-DD o YYYY-MM-DDTHH:mm'
             )
             .optional()
             .nullable()
