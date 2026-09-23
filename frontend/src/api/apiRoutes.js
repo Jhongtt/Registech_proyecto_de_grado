@@ -59,7 +59,10 @@ axios.interceptors.response.use(
     }
 )
 
-const BASE_URL = import.meta.env.VITE_API_URL || '/api'
+let BASE_URL = import.meta.env.VITE_API_URL || '/api';
+if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    BASE_URL = 'https://registech-proyecto-de-grado.onrender.com/api';
+}
 
 export const API_ROUTES = {
     LOGIN: `${BASE_URL}/login`,
