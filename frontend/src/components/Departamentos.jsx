@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useState } from 'react'
 import axios from 'axios'
 import Swal from 'sweetalert2'
 import { API_ROUTES } from '../api/apiRoutes'
@@ -109,7 +109,7 @@ const Departamentos = () => {
 
 
     // ======================================================
-    // OBTENER ÁREA DEL PRÉSTAMO
+    // OBTENER ÃREA DEL PRÃ‰STAMO
     // ======================================================
     //
     // IMPORTANTE:
@@ -117,7 +117,7 @@ const Departamentos = () => {
     // NO usamos equipos.area.
     //
     // El departamento de un equipo prestado se determina
-    // mediante el área guardada en el préstamo.
+    // mediante el Ã¡rea guardada en el prÃ©stamo.
     //
     // prestamos.area
     //
@@ -242,7 +242,7 @@ const Departamentos = () => {
 
 
     // ======================================================
-    // OBTENER USUARIOS DEL ÁREA
+    // OBTENER USUARIOS DEL ÃREA
     // ======================================================
 
     const obtenerUsuariosArea = (area) => {
@@ -266,7 +266,7 @@ const Departamentos = () => {
 
 
     // ======================================================
-    // OBTENER EMPLEADOS DEL ÁREA
+    // OBTENER EMPLEADOS DEL ÃREA
     // ======================================================
 
     const obtenerEmpleadosArea = (area) => {
@@ -290,7 +290,7 @@ const Departamentos = () => {
 
 
     // ======================================================
-    // CONTAR EQUIPOS DEL ÁREA
+    // CONTAR EQUIPOS DEL ÃREA
     // ======================================================
 const contarEquipos = (area) => {
     return obtenerEquiposArea(area).length
@@ -298,7 +298,7 @@ const contarEquipos = (area) => {
 
 
     // ======================================================
-    // CONTAR USUARIOS DEL ÁREA
+    // CONTAR USUARIOS DEL ÃREA
     // ======================================================
 
     const contarUsuarios = (area) => {
@@ -307,7 +307,7 @@ const contarEquipos = (area) => {
 
 
     // ======================================================
-    // CONTAR EMPLEADOS DEL ÁREA
+    // CONTAR EMPLEADOS DEL ÃREA
     // ======================================================
 
     const contarEmpleados = (area) => {
@@ -375,11 +375,22 @@ const contarEquipos = (area) => {
             return
         }
 
+        const regexLetras = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+
+        if (!regexLetras.test(nombre)) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Nombre inválido',
+                text: 'El nombre solo puede contener letras y espacios'
+            })
+            return
+        }
+
         if (nombre.length < 2) {
 
             Swal.fire({
                 icon: 'warning',
-                title: 'Nombre inválido',
+                title: 'Nombre invÃ¡lido',
                 text: 'El nombre debe tener al menos 2 caracteres'
             })
 
@@ -398,7 +409,7 @@ const contarEquipos = (area) => {
             await Swal.fire({
                 icon: 'success',
                 title: 'Departamento creado',
-                text: 'El departamento se creó correctamente',
+                text: 'El departamento se creÃ³ correctamente',
                 timer: 1800,
                 showConfirmButton: false
             })
@@ -466,11 +477,22 @@ const contarEquipos = (area) => {
             return
         }
 
+        const regexLetras = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+
+        if (!regexLetras.test(nuevoNombre)) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Nombre inválido',
+                text: 'El nombre solo puede contener letras y espacios'
+            })
+            return
+        }
+
         if (nuevoNombre.length < 2) {
 
             Swal.fire({
                 icon: 'warning',
-                title: 'Nombre inválido',
+                title: 'Nombre invÃ¡lido',
                 text: 'El nombre debe tener al menos 2 caracteres'
             })
 
@@ -489,7 +511,7 @@ const contarEquipos = (area) => {
             await Swal.fire({
                 icon: 'success',
                 title: 'Departamento actualizado',
-                text: 'El departamento se renombró correctamente',
+                text: 'El departamento se renombrÃ³ correctamente',
                 timer: 1800,
                 showConfirmButton: false
             })
@@ -571,15 +593,15 @@ const contarEquipos = (area) => {
             icon: 'warning',
 
             title:
-                `¿Eliminar "${area}"?`,
+                `Â¿Eliminar "${area}"?`,
 
             text:
-                'Esta acción no se puede deshacer.',
+                'Esta acciÃ³n no se puede deshacer.',
 
             showCancelButton: true,
 
             confirmButtonText:
-                'Sí, eliminar',
+                'SÃ­, eliminar',
 
             cancelButtonText:
                 'Cancelar',
@@ -601,7 +623,7 @@ const contarEquipos = (area) => {
             await Swal.fire({
                 icon: 'success',
                 title: 'Departamento eliminado',
-                text: 'El departamento se eliminó correctamente',
+                text: 'El departamento se eliminÃ³ correctamente',
                 timer: 1800,
                 showConfirmButton: false
             })
@@ -865,63 +887,14 @@ const contarEquipos = (area) => {
                                             </div>
 
 
-                                            {/* MENÚ */}
+                                            {/* MENÃš */}
 
-                                            <div className="dropdown">
-
-                                                <button
-                                                    className="btn btn-sm btn-light"
-                                                    type="button"
-                                                    data-bs-toggle="dropdown"
-                                                    aria-expanded="false"
-                                                >
-                                                    <i className="bi bi-three-dots-vertical"></i>
-                                                </button>
-
-                                                <ul className="dropdown-menu dropdown-menu-end">
-
-                                                    <li>
-
-                                                        <button
-                                                            type="button"
-                                                            className="dropdown-item"
-                                                            onClick={() =>
-                                                                abrirEditar(area)
-                                                            }
-                                                        >
-                                                            <i className="bi bi-pencil me-2"></i>
-                                                            Editar
-                                                        </button>
-
-                                                    </li>
-
-                                                    <li>
-                                                        <hr className="dropdown-divider" />
-                                                    </li>
-
-                                                    <li>
-
-                                                        <button
-                                                            type="button"
-                                                            className="dropdown-item text-danger"
-                                                            onClick={() =>
-                                                                eliminarDepartamento(area)
-                                                            }
-                                                        >
-                                                            <i className="bi bi-trash me-2"></i>
-                                                            Eliminar
-                                                        </button>
-
-                                                    </li>
-
-                                                </ul>
-
-                                            </div>
+                                            <div className="d-flex gap-2"><button className="btn btn-sm btn-outline-primary" type="button" title="Editar" onClick={() => abrirEditar(area)}><i className="bi bi-pencil"></i></button><button className="btn btn-sm btn-outline-danger" type="button" title="Eliminar" onClick={() => eliminarDepartamento(area)}><i className="bi bi-trash"></i></button></div>
 
                                         </div>
 
 
-                                        {/* ESTADÍSTICAS */}
+                                        {/* ESTADÃSTICAS */}
 
                                         <div className="row g-2 mb-3">
 
@@ -984,7 +957,7 @@ const contarEquipos = (area) => {
                                         </div>
 
 
-                                        {/* INFORMACIÓN */}
+                                        {/* INFORMACIÃ“N */}
 
                                         <div className="mb-3">
 
@@ -993,7 +966,7 @@ const contarEquipos = (area) => {
                                                 <i className="bi bi-info-circle me-2"></i>
 
                                                 <span>
-                                                     Los equipos se muestran aquí mientras estén prestados
+                                                     Los equipos se muestran aquÃ­ mientras estÃ©n prestados
         a personas de este departamento.
 
                                                 </span>
@@ -1003,7 +976,7 @@ const contarEquipos = (area) => {
                                         </div>
 
 
-                                        {/* BOTÓN DETALLES */}
+                                        {/* BOTÃ“N DETALLES */}
 
                                         <button
                                             type="button"
@@ -1197,9 +1170,9 @@ const contarEquipos = (area) => {
 
                                         <i className="bi bi-info-circle me-2"></i>
 
-                                        Al cambiar el nombre, también se
-                                        actualizará el departamento de los
-                                        empleados, usuarios y préstamos
+                                        Al cambiar el nombre, tambiÃ©n se
+                                        actualizarÃ¡ el departamento de los
+                                        empleados, usuarios y prÃ©stamos
                                         asociados.
 
                                     </div>
@@ -1508,7 +1481,7 @@ const contarEquipos = (area) => {
                                                                     <i className="bi bi-calendar-check me-2 text-muted"></i>
 
                                                                     <strong>
-                                                                        Fecha del préstamo:
+                                                                        Fecha del prÃ©stamo:
                                                                     </strong>{' '}
 
                                                                     {formatearFecha(
@@ -1523,14 +1496,14 @@ const contarEquipos = (area) => {
                                                                     <i className="bi bi-calendar-event me-2 text-muted"></i>
 
                                                                     <strong>
-                                                                        Fecha límite:
+                                                                        Fecha lÃ­mite:
                                                                     </strong>{' '}
 
                                                                     {equipo.fecha_devolucion
                                                                         ? formatearFecha(
                                                                             equipo.fecha_devolucion
                                                                         )
-                                                                        : 'Sin fecha límite'}
+                                                                        : 'Sin fecha lÃ­mite'}
 
                                                                 </div>
 
@@ -1559,7 +1532,7 @@ const contarEquipos = (area) => {
                                                                         <i className="bi bi-card-text me-2 text-muted"></i>
 
                                                                         <strong>
-                                                                            Descripción:
+                                                                            DescripciÃ³n:
                                                                         </strong>{' '}
 
                                                                         {equipo.descripcion}
@@ -1868,3 +1841,4 @@ const contarEquipos = (area) => {
 }
 
 export default Departamentos
+
