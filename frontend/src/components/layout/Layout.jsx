@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext'
 export default function Layout({ children }) {
     const { usuario } = useAuth()
     const [collapsed, setCollapsed] = useState(false)
+    const [mobileOpen, setMobileOpen] = useState(false)
     const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light')
 
     useEffect(() => {
@@ -23,7 +24,7 @@ export default function Layout({ children }) {
     const toggleTheme = () => setTheme(t => t === 'light' ? 'dark' : 'light')
 
     return (
-        <div className={`app-layout ${collapsed ? 'app-layout--collapsed' : ''}`} data-theme={theme}>
+        <div className={`app-layout ${collapsed ? 'app-layout--collapsed' : ''} ${mobileOpen ? 'app-layout--menu-open' : ''}`} data-theme={theme}>
             <Sidebar
                 collapsed={collapsed}
                 onToggle={() => setCollapsed(!collapsed)}
@@ -36,11 +37,19 @@ export default function Layout({ children }) {
                     usuario={usuario}
                     theme={theme}
                     onToggleTheme={toggleTheme}
+                    onMenuToggle={() => setMobileOpen(true)}
                 />
                 <main className="app-content" data-theme={theme}>
                     {children}
                 </main>
             </div>
+
+            {mobileOpen && (
+                <div
+                    className="menu-backdrop"
+                    onClick={() => setMobileOpen(false)}
+                ></div>
+            )}
         </div>
     )
 }

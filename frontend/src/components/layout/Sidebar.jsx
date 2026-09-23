@@ -95,17 +95,13 @@ export default function Sidebar({
             }`}
         >
             <div className="sidebar__brand">
-                {!collapsed && (
-                    <span className="sidebar__brand-text">
-                        Regis<span className="text-accent">Tech</span>
-                    </span>
-                )}
+                <span className="sidebar__brand-text">
+                    Regis<span className="text-accent">Tech</span>
+                </span>
 
-                {collapsed && (
-                    <span className="sidebar__brand-text sidebar__brand-text--center">
-                        RT
-                    </span>
-                )}
+                <span className="sidebar__brand-text sidebar__brand-text--center">
+                    RT
+                </span>
             </div>
 
             <nav className="sidebar__nav">
@@ -124,19 +120,13 @@ export default function Sidebar({
                                         : ''
                                 }`
                             }
-                            title={
-                                collapsed
-                                    ? item.label
-                                    : undefined
-                            }
+                            title={item.label}
                         >
                             <i
                                 className={`bi ${item.icon} sidebar__icon`}
                             ></i>
 
-                            {!collapsed && (
-                                <span>{item.label}</span>
-                            )}
+                            <span>{item.label}</span>
                         </NavLink>
                     ))}
             </nav>
@@ -150,9 +140,7 @@ export default function Sidebar({
                 >
                     <i className={`bi ${collapsed ? 'bi-list' : 'bi-chevron-double-left'} sidebar__icon`}></i>
 
-                    {!collapsed && (
-                        <span>{collapsed ? 'Ampliar' : 'Reducir menú'}</span>
-                    )}
+                    <span>{collapsed ? 'Ampliar' : 'Reducir menú'}</span>
                 </button>
 
                 <button
@@ -161,9 +149,7 @@ export default function Sidebar({
                 >
                     <i className="bi bi-box-arrow-left sidebar__icon"></i>
 
-                    {!collapsed && (
-                        <span>Cerrar sesion</span>
-                    )}
+                    <span>Cerrar sesion</span>
                 </button>
             </div>
         </aside>
