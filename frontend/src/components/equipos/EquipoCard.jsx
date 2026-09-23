@@ -9,6 +9,12 @@ import {
 import { API_ROUTES } from '../../api/apiRoutes'
 import { useAuth } from '../../context/AuthContext'
 
+const formatDateTime = (isoString) => {
+    if(!isoString) return '-';
+    const d = new Date(isoString);
+    return d.toLocaleString('es-CO', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true});
+}
+
 export default function EquipoCard({
     equipo,
     unidades = [],
@@ -1694,14 +1700,7 @@ export default function EquipoCard({
 
                                                                                     <strong>
 
-                                                                                        {registro.fecha_prestamo
-                                                                                            ? String(
-                                                                                                registro.fecha_prestamo
-                                                                                            ).substring(
-                                                                                                0,
-                                                                                                10
-                                                                                            )
-                                                                                            : 'No registrada'}
+                                                                                        {registro.fecha_prestamo ? formatDateTime(registro.fecha_prestamo) : 'No registrada'}
 
                                                                                     </strong>
 
@@ -1719,14 +1718,7 @@ export default function EquipoCard({
 
                                                                                     <strong>
 
-                                                                                        {registro.fecha_devolucion
-                                                                                            ? String(
-                                                                                                registro.fecha_devolucion
-                                                                                            ).substring(
-                                                                                                0,
-                                                                                                10
-                                                                                            )
-                                                                                            : 'Actualmente'}
+                                                                                        {registro.fecha_devolucion ? formatDateTime(registro.fecha_devolucion) : 'Actualmente'}
 
                                                                                     </strong>
 

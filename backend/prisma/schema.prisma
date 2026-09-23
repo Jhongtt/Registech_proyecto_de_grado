@@ -44,8 +44,8 @@ model empleados {
 
 model prestamos {
   id_prestamo                 String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  fecha_prestamo              DateTime           @db.Date
-  fecha_devolucion            DateTime?          @db.Date
+  fecha_prestamo              DateTime           @db.Timestamptz(6)
+  fecha_devolucion            DateTime?          @db.Timestamptz(6)
   estado                      String             @default("activo") @db.VarChar(20)
   observaciones               String?
   evidencia                   String?            @db.VarChar(255)

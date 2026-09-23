@@ -132,6 +132,13 @@ const HistorialPrestamos = () => {
                                 {prestamosPagina.map(p => {
                                     const duracion = getDuracion(p)
                                     const situacion = getSituacion(p)
+
+                                    const formatDateTime = (isoString) => {
+                                        if(!isoString) return '-';
+                                        const d = new Date(isoString);
+                                        return d.toLocaleString('es-CO', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true});
+                                    }
+
                                     return (
                                         <tr key={p.id_prestamo}>
                                             <td>
@@ -143,9 +150,9 @@ const HistorialPrestamos = () => {
                                                 ))}
                                             </td>
                                             <td>{p.usuario || p.empleado || '-'}</td>
-                                            <td>{String(p.fecha_prestamo).substring(0, 10)}</td>
+                                            <td>{formatDateTime(p.fecha_prestamo)}</td>
                                             <td>
-                                                {String(p.fecha_devolucion || '').substring(0, 10) || '—'}
+                                                {p.fecha_devolucion ? formatDateTime(p.fecha_devolucion) : '—'}
                                                 {!p.fecha_devolucion && <small className="text-muted d-block">(sin límite)</small>}
                                             </td>
                                             <td>

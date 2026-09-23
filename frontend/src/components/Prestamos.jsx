@@ -8,6 +8,12 @@ import Paginador from "./ui/Paginador"
 // FECHAS
 // =========================================================
 
+const formatDateTime = (isoString) => {
+    if(!isoString) return '-';
+    const d = new Date(isoString);
+    return d.toLocaleString('es-CO', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true});
+}
+
 const toISODate = (fecha) => {
     const y = fecha.getFullYear()
     const m = String(fecha.getMonth() + 1).padStart(2, "0")
@@ -1545,24 +1551,11 @@ const Prestamos = () => {
                                         </td>
 
                                         <td>
-
-                                            {p.fecha_prestamo
-                                                ? String(
-                                                    p.fecha_prestamo
-                                                ).substring(0, 10)
-                                                : "—"
-                                            }
-
+                                            {p.fecha_prestamo ? formatDateTime(p.fecha_prestamo) : "—"}
                                         </td>
 
                                         <td>
-
-                                            {p.fecha_devolucion
-                                                ? String(
-                                                    p.fecha_devolucion
-                                                ).substring(0, 10)
-                                                : "—"
-                                            }
+                                            {p.fecha_devolucion ? formatDateTime(p.fecha_devolucion) : "—"}
 
                                             {(() => {
 
@@ -1732,14 +1725,7 @@ const Prestamos = () => {
                                         </small>
 
                                         <strong>
-
-                                            {prestamoSeleccionado.fecha_prestamo
-                                                ? String(
-                                                    prestamoSeleccionado.fecha_prestamo
-                                                ).substring(0, 10)
-                                                : "—"
-                                            }
-
+                                            {prestamoSeleccionado.fecha_prestamo ? formatDateTime(prestamoSeleccionado.fecha_prestamo) : "—"}
                                         </strong>
 
                                     </div>
@@ -1751,14 +1737,7 @@ const Prestamos = () => {
                                         </small>
 
                                         <strong>
-
-                                            {prestamoSeleccionado.fecha_devolucion
-                                                ? String(
-                                                    prestamoSeleccionado.fecha_devolucion
-                                                ).substring(0, 10)
-                                                : "—"
-                                            }
-
+                                            {prestamoSeleccionado.fecha_devolucion ? formatDateTime(prestamoSeleccionado.fecha_devolucion) : "—"}
                                         </strong>
 
                                     </div>
